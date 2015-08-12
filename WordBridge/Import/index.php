@@ -15,7 +15,7 @@
     $progress = "";
     $workingDir = "/home/peter/Documents/";
 
-    $sourceFile = "/home/peter/Documents/multilevelList.docx";
+    $sourceFile = "/home/peter/Documents/TocDoc.docx";
 
     // Init Apache POI
     $converter = new XWPFToHTMLConverter($workingDir, $progress);

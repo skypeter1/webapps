@@ -22,7 +22,7 @@ class HTMLElement{
     
     /**
      * Construct HTML Element
-     * @param  string   Tag name
+     * @param  string  tagname
      */
     function __construct($tagName)
     {
@@ -167,7 +167,31 @@ class HTMLElement{
     public function getInnerElements()
     {
         return $this->innerElements;
-    }	
+    }
+
+    /**
+     * Check if the toc cell contains text
+     * @return bool
+     */
+    public function tocCellContainsText(){
+
+        $contains = true;
+        $text = "";
+        if($this->getTagName() == 'td') {
+            $inner = $this->getInnerElements();
+            for ($i = 0; $i < count($inner); $i++) {
+                $text .= $inner[$i]->getInnerText();
+            }
+            $needles = array("<strong >","</strong>","<em >","</em>","<br />");
+            $text = trim(str_replace($needles,"",$text));
+
+            if (strlen($text) == 0) {
+                $contains = false;
+            }
+        }
+
+        return $contains;
+    }
     
     /**
      * Get HTML

@@ -699,9 +699,6 @@ class XWPFToHTMLConverter {
         $container = new HTMLElement(HTMLElement::P);
         $styleClass = new StyleClass();
         
-        // Get drawing properties
-        //$this->collectDrawingProperties($paragraph);
-        
         // Get styles
         $this->styles = $this->document->getStyles();
         
@@ -735,6 +732,8 @@ class XWPFToHTMLConverter {
         
         // Get xml of this paragraph
         $paragraph_xml = java_values($paragraph->getCTP()->toString());
+
+        //var_dump($paragraph_xml);
 
         //Check if is a table of contents
         if (strpos($paragraph_xml, '<w:fldChar w:fldCharType="begin"/>') !== false) {
@@ -1593,9 +1592,24 @@ class XWPFToHTMLConverter {
         $cellPage->addInnerElement($tocPage);
 
 
-        //Add element to toc table
-        $rowContainer->addInnerElement($cellNum);
-        $rowContainer->addInnerElement($cellDescription);
+        //Add elements to the toc table
+
+        //Check if the cell contains text
+        if($cellNum->tocCellContainsText()) {
+            $cellNum->setAttribute('style','min-width:25px');
+            $rowContainer->addInnerElement($cellNum);
+        }else{
+            $cellDescription->setAttribute('colspan','2');
+        }
+
+        //Check if the cell contains text
+        if($cellDescription->tocCellContainsText()) {
+            $rowContainer->addInnerElement($cellDescription);
+        }else{
+            $cellNum->setAttribute('colspan','2');
+        }
+
+        //Assign cell page
         $rowContainer->addInnerElement($cellPage);
 
         //Add if this is a toc table
