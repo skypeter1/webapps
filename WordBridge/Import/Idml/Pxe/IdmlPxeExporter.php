@@ -383,7 +383,7 @@ class IdmlPxeExporter
             }
         }
         $def = IdmlPxeExportParentMap::parsePixieDef($pxeDef);
-        ///require_once(dirname(__FILE__) . self::TRANSLATOR_DIRECTORY . self::DEFAULT_TRANSLATOR . '.php');
+        ///require_once(dirname(__FILE__) . self::TRANSLATOR_DIRECTORY . self::DEFAULT_TRANSLATOR . 'test.php');
         $translatorName = self::DEFAULT_TRANSLATOR;
         $translator = new $translatorName;
         $translator->setTagName($def['tagName']);

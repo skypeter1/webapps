@@ -88,6 +88,16 @@ class StyleClass{
     {
         return $this->attributes;
     }
+
+    /**
+     * @param $key
+     * @return bool
+     */
+    public function attributeExists($key)
+    {
+        $existence = array_key_exists($key, $this->attributes);
+        return $existence;
+    }
     
     /**
      * Get CSS attribute value

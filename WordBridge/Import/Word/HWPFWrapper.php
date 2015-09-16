@@ -265,6 +265,10 @@ class HWPFWrapper {
         //var_dump($listType);
         return $listType;
     }
+
+    public static function getHeadlineType($styleName){
+
+    }
     
     /**
      * Get bullet point text

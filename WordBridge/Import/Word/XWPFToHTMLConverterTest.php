@@ -1,5 +1,6 @@
 <?php
 
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPFToHTMLConverter.php';
 /**
  * Created by PhpStorm.
  * User: peter
@@ -8,8 +9,24 @@
  */
 class XWPFToHTMLConverterTest extends PHPUnit_Framework_TestCase
 {
-    public function testSome()
+    private $document;
+
+    protected function setUp()
     {
-        $this->assertEquals(2,2,'test pass');
+        $workingDir = "/vagrant";
+        $progressUpdater = $this->getMockBuilder('ProgressUpdater')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->document = new XWPFToHTMLConverter($workingDir, $progressUpdater);
     }
+
+    public function testLoadDocx()
+    {
+        $document = $this->document->loadDocx("/home/peter/Documents/Images.docx");
+        var_dump($document);
+        $this->assertNotNull($document);
+    }
+
+
 }

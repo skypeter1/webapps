@@ -15,6 +15,14 @@ class HTMLElement{
     const TD    = "td";
     const STRONG = "strong";
     const EM    = "em";
+    const HEADER = "header";
+    const FOOTER = "footer";
+    const H1 = "h1";
+    const H2 = "h2";
+    const H3 = "h3";
+    const H4 = "h4";
+    const H5 = "h5";
+    const H6 = "h6";
 
     private $tagName;
     private $attributes;
@@ -83,8 +91,7 @@ class HTMLElement{
      */
     public function getClass()
     {
-        if(array_key_exists('class', $this->attributes))
-        {
+        if (array_key_exists('class', $this->attributes)){
             return $this->attributes['class'];
         }
         return '';
@@ -106,7 +113,7 @@ class HTMLElement{
     public function getLastElement()
     {
         return end($this->innerElements);
-    }	
+    }
     
     /**
      * Add inner element
@@ -115,7 +122,7 @@ class HTMLElement{
     public function addInnerElement($innerElement)
     {
         $this->innerElements[] = $innerElement;
-    }	
+    }
     
     /**
      * Set inner text
@@ -129,7 +136,7 @@ class HTMLElement{
         
         // Set inner text element
         $this->setInnerElement($textElement);
-    }	
+    }
     
     /**
      * Add inner text
@@ -149,7 +156,7 @@ class HTMLElement{
         // Set inner text element
         $textElement->setInnerElement($text);
         $this->setInnerElement($textElement);
-    }	
+    }
     
     /**
      * Get inner text
@@ -158,7 +165,7 @@ class HTMLElement{
     public function getInnerText()
     {
         return ($this->innerElements[0]) ? @$this->innerElements[0]->getHTML() : 0;
-    }	
+    }
     
     /**
      * Get inner elemens
@@ -173,17 +180,18 @@ class HTMLElement{
      * Check if the toc cell contains text
      * @return bool
      */
-    public function tocCellContainsText(){
+    public function tocCellContainsText()
+    {
 
         $contains = true;
         $text = "";
-        if($this->getTagName() == 'td') {
+        if ($this->getTagName() == 'td') {
             $inner = $this->getInnerElements();
             for ($i = 0; $i < count($inner); $i++) {
                 $text .= $inner[$i]->getInnerText();
             }
             $needles = array("<strong >","</strong>","<em >","</em>","<br />");
-            $text = trim(str_replace($needles,"",$text));
+            $text = trim(str_replace($needles, "", $text));
 
             if (strlen($text) == 0) {
                 $contains = false;

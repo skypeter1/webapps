@@ -65,9 +65,12 @@ class HWPFToHTMLConverter {
         include($local);
 	}
 
+
+
 	/**
-	*	does no parsing, but sets the parsing file, prepares java file stream and document file
+	*does no parsing, but sets the parsing file, prepares java file stream and document file
 	*/
+
 	public function setDocFileToParse($path) {
 		$this->parsingFile = $path;
 

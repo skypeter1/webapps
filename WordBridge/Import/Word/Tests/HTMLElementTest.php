@@ -1,6 +1,7 @@
 <?php
 
-include '/vagrant/ChaucerProcessor/processor/vagrant/ChaucerProcessor/processor/Lib/Import/Word/HTMLElement.php';
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/HTMLElement.php';
+
 /**
  * Created by PhpStorm.
  * User: peter
@@ -34,8 +35,8 @@ class HTMLElementTest extends PHPUnit_Framework_TestCase
         $level = 0;
         $html = $divContainer->getHTML($level);
 
-        var_dump($html);
+        $expected = "<div><p><span>Text inside span</span></p></div>";
 
-        //$this->assertEquals(1,1,'Testing HTML Container');
+        $this->assertEquals($expected, $html, 'Testing HTML Container');
     }
 }
