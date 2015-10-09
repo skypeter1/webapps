@@ -12,6 +12,7 @@ include_once "HTMLElement.php";
 include_once "HWPFWrapper.php";
 include_once "StyleSheet.php";
 include_once "XhtmlEntityConverter.php";
+include_once "XWPF/XWPFTable.php";
 
 
 /**
@@ -142,6 +143,10 @@ class XWPFToHTMLConverter {
     private $sectionContainer;
     private $contador;
 
+    /**
+     * Java
+     */
+    private $localJava;
 
     /**
      * Constructor that needs to get a Java Bridge classes
@@ -195,7 +200,8 @@ class XWPFToHTMLConverter {
         
         // Include Java PHP local bridge library
         include($local);
-
+        $this->localJava = $local;
+        var_dump($this->localJava);
         // Adjust progress step
         //$this->_progress->incrementStep();
     }
@@ -424,7 +430,7 @@ class XWPFToHTMLConverter {
         // Get document body elements
         $elements = java_values($this->document->getBodyElements());
 
-       // var_dump(java_values($this->document->getDocument()->ToString()));
+        //var_dump(java_values($this->document->getDocument()->ToString()));
 
         //Set current processed part
         $this->currentProcessedPart = "BODY";
@@ -437,7 +443,11 @@ class XWPFToHTMLConverter {
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
 
-                //$this->toc = false;
+                $xwpfTable =  new XWPFTable($element,$key,$this->localJava);
+
+                //var_dump($xwpfTable->getCTTbl());
+                var_dump($xwpfTable->getStyleID());
+                var_dump($xwpfTable->getRows());
                 
                 // Get table out of element
                 $table = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');

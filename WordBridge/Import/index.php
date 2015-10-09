@@ -16,7 +16,8 @@
     //Set document directory
     $progress = "";
     $workingDir = "/home/peter/Documents";
-    $sourceFile = "/home/peter/Documents/IFRS.docx";
+    $sourceFile = "/home/peter/Documents/danish/10981A_FM.docx";
+    //$sourceFile = "/home/peter/Documents/CIA.docx";
 
     //Initiate time counter
     $start = microtime(true);
@@ -36,6 +37,8 @@
 
     // Convert everything to HTML
     $converter->convertToHTML();
+
+    //var_dump($converter);
 
     // Get HTML pages
     $pages = $converter->getHTMLPages();
@@ -59,6 +62,8 @@
 
 
 ?>
+
+
 
 <p>Time Elapsed to convert this document:<?php var_dump($elapsedTime);  ?></p>
 
