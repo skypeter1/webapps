@@ -259,10 +259,8 @@ class HWPFWrapper {
             case 'upperLetter': $listType = 'upper-alpha'; break;
             case 'lowerLetter': $listType = 'lower-alpha'; break;
             case 'decimalZero': $listType = 'decimal-leading-zero'; break;
-
-            //default: $listType = $type; break;
         }
-        //var_dump($listType);
+
         return $listType;
     }
 

@@ -8,13 +8,13 @@ class HTMLElement{
     const DIV  = "div";
     const IMG  = "img";
     const P    = "p";
-    const LI    = "li";
-    const UL    = "ul";
-    const TABLE    = "table";
+    const LI   = "li";
+    const UL   = "ul";
+    const TABLE = "table";
     const TR    = "tr";
     const TD    = "td";
     const STRONG = "strong";
-    const EM    = "em";
+    const EM = "em";
     const HEADER = "header";
     const FOOTER = "footer";
     const H1 = "h1";
@@ -23,8 +23,15 @@ class HTMLElement{
     const H4 = "h4";
     const H5 = "h5";
     const H6 = "h6";
+    const FIGURE = "figure";
+    const ARTICLE = "article";
+    const SECTION = "section";
+    const NAV = "nav";
+    const ASIDE = "aside";
+    const SEC = "sec";
 
     private $tagName;
+    private $id;
     private $attributes;
     private $innerElements;
     
@@ -37,6 +44,26 @@ class HTMLElement{
         $this->tagName = $tagName;
         $this->attributes = array();
         $this->innerElements = array();
+    }
+
+    /**
+     * @param $id
+     * @return mixed
+     */
+    public function setId($id){
+        $this->id = $id;
+        return $this->id;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId(){
+        if(is_null($this->id)){
+            return -1;
+        }else{
+            return $this->id;
+        }
     }
 
     /**
@@ -73,8 +100,17 @@ class HTMLElement{
      */
     public function getAttribute($key)
     {
-        $this->attributes[$key];
-    }	
+        $attribute = "";
+        if(!is_null($this->attributes[$key])){
+            $attribute =  $this->attributes[$key];
+        }
+       return $attribute;
+    }
+
+    public function getAttributes(){
+        return $this->attributes;
+    }
+
     
     /**
      * Set class by name
@@ -177,12 +213,27 @@ class HTMLElement{
     }
 
     /**
+     * @param $tagName
+     * @return array
+     */
+    public function getInnerElementsByTagName($tagName)
+    {
+        $elements = $this->innerElements;
+        $tagElements = array();
+        foreach ($elements as $element) {
+            if ($element->getTagName() == $tagName) {
+                $tagElements[] = $element;
+            }
+        }
+        return $tagElements;
+    }
+
+    /**
      * Check if the toc cell contains text
      * @return bool
      */
     public function tocCellContainsText()
     {
-
         $contains = true;
         $text = "";
         if ($this->getTagName() == 'td') {

@@ -1,5 +1,6 @@
 <?php
 
+namespace Doctrine\Instantiator\Instantiator;
 include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPFToHTMLConverter.php';
 /**
  * Created by PhpStorm.
@@ -28,5 +29,13 @@ class XWPFToHTMLConverterTest extends PHPUnit_Framework_TestCase
         $this->assertNotNull($document);
     }
 
+    public function testConvertToHTML()
+    {
+        try {
+            $this->document->convertToHTML();
+        }catch (\DoctrineTest\InstantiatorTestAsset\ExceptionAsset $ex){
+        $this->assertInternalType('EceptionAsset', $ex);
+        }
+    }
 
 }
