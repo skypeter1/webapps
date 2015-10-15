@@ -1,5 +1,8 @@
 <?php
 
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFTableRow.php';
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFTableCell.php';
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFSDTCell.php';
 /**
  * @author Peter Arboleda
  * Date: 10/9/15
@@ -27,6 +30,7 @@ class XWPFTable
         }
         $this->javaTable = $table;
         $this->tableKey = $key;
+        $this->localJava = $localJava;
         include($localJava);
     }
 
@@ -92,28 +96,39 @@ class XWPFTable
         return $marginBottom;
     }
 
-    /**
-     * Parse Word table
-     * @staticvar   int Unique ID
-     * @param       object  Table
-     * @param       string  Element key
-     * @return      HTMLElement
-     */
 
+    /**
+     * @return HTMLElement|null
+     * @throws Exception
+     */
     public function parseTable()
     {
         if(is_object($this->javaTable)){
 
-            $table = $this->javaTable;
+            $container = null;
             $rows = $this->getRows();
 
-            foreach($rows as $row){
+            foreach($rows as  $key => $row){
 
+                $xwpfRow = new XWPFTableRow($row);
+                $cells = $xwpfRow->getTableICells();
+
+                foreach($cells as  $cell){
+                    if(java_instanceof($cell,java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))){
+                        $xwpfCell = new XWPFTableCell($cell);
+                    }
+
+                    if(java_instanceof($cell,java('org.apache.poi.xwpf.usermodel.XWPFSDTCell'))){
+                        $rowXml = java_values($row->getCtRow()->ToString());
+                        $xwpfSdtCell = new XWPFSDTCell($cell,$rowXml);
+                        $container = $xwpfSdtCell->parseSDTCell();
+                    }
+                }
             }
-
+            return $container;
 
         }else{
-            throw new Exception("[XWPFTable::parseTable]");
+            throw new Exception("[XWPFTable::parseTable] No Java Table instance");
         }
     }
 
