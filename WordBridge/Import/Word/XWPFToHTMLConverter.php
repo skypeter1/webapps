@@ -442,10 +442,10 @@ class XWPFToHTMLConverter {
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
 
-//                $xwpfTable =  new XWPFTable($element, $key, $this->localJava);
-//                $stdTable = $xwpfTable->parseTable();
+                $xwpfTable =  new XWPFTable($element, $key, $this->mainStyleSheet);
+                $stdTable = $xwpfTable->parseTable();
 //                //$container->addInnerElement()
-//                //var_dump($stdTable);
+//                var_dump($stdTable);
 //                //$stdTable->setId($key);
 //                $div = new HTMLElement(HTMLElement::DIV);
 //                //$div->addInnerElement($stdTable);
@@ -454,17 +454,16 @@ class XWPFToHTMLConverter {
 //                $container->addInnerElement($stdTable);
 //                //var_dump($container);
 //                //var_dump($stdTable->getHTML());
-
                 // Get table out of element
-                $table = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
-
-                // Parse table
-                $tableElement = $this->parseTable($table, $key);
-
-                $tableElement->setId($key);
+//                $table = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
+//
+//                // Parse table
+//                $tableElement = $this->parseTable($table, $key);
+//
+//                $tableElement->setId($key);
 
                 // Add element to container
-                $container->addInnerElement($tableElement);
+                $container->addInnerElement($stdTable);
             }
 
             // Check if element is a paragraph
@@ -815,9 +814,6 @@ class XWPFToHTMLConverter {
                 $cnm = $this->mainStyleSheet->getClassName($tdStyle);
                 $cellTag->setClass($cnm);
 
-                // Get cell text
-                //$text = java_values($cell->getText());
-
                 // Get and iterate through cell paragraphs
                 $paragraphs = java_values($cell->getParagraphs());
                 foreach ($paragraphs as $key => $paragraph) {
@@ -851,7 +847,6 @@ class XWPFToHTMLConverter {
                     $rowXml = java_values($row->getCtRow()->ToString());
                     $xwpfSdtCell = new XWPFSDTCell($cell, $rowXml);
                     $container = $xwpfSdtCell->parseSDTCell();
-                    //$container->addInnerElement($xwpfTable)
                 }
 
             }

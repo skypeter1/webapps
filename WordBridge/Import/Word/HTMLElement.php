@@ -29,6 +29,8 @@ class HTMLElement{
     const NAV = "nav";
     const ASIDE = "aside";
     const SEC = "sec";
+    const SELECT = "select";
+    const OPTION = "option";
 
     private $tagName;
     private $id;
