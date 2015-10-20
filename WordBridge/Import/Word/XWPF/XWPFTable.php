@@ -156,13 +156,15 @@ class XWPFTable
         }
     }
 
-    private function parseCell($cell)
+    public function parseCell($cell)
     {
         $cellContainer = new HTMLElement(HTMLElement::TD);
         $xwpfCell = new XWPFTableCell($cell);
         $text = $xwpfCell->getText($cell);
-        $color = $xwpfCell->getColor();
-        var_dump($color);
+        $borders = $xwpfCell->getBorderProperties();
+        $widht = $xwpfCell->getCellWidht();
+        var_dump($borders);
+        var_dump($widht);
         $cellContainer->setInnerText($text);
 
         return $cellContainer;
