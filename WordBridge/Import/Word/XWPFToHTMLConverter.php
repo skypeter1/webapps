@@ -207,6 +207,10 @@ class XWPFToHTMLConverter {
         //$this->_progress->incrementStep();
     }
 
+    public function getMainStyleSheet(){
+        return $this->mainStyleSheet;
+    }
+
     /**
      * Does no parsing, but sets the parsing file, prepares Java file stream and document file
      * @param   string  Path to Word document
@@ -240,7 +244,6 @@ class XWPFToHTMLConverter {
         $this->document = $this->loadDocx($docx_file);
         //$this->updateStep($docx_file);
         //var_dump($this->document);
-
 
         $this->numPages = java_values($this->document->getProperties()->getExtendedProperties()->getUnderlyingProperties()->getPages());
 
@@ -442,25 +445,11 @@ class XWPFToHTMLConverter {
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
 
-                $xwpfTable =  new XWPFTable($element, $key, $this->mainStyleSheet);
+                $stylesheet = $this->mainStyleSheet;
+                //var_dump(get_class($stylesheet));
+
+                $xwpfTable =  new XWPFTable($element, $key, $stylesheet);
                 $stdTable = $xwpfTable->parseTable();
-//                //$container->addInnerElement()
-//                var_dump($stdTable);
-//                //$stdTable->setId($key);
-//                $div = new HTMLElement(HTMLElement::DIV);
-//                //$div->addInnerElement($stdTable);
-//
-//                //$container->addInnerElement($div);
-//                $container->addInnerElement($stdTable);
-//                //var_dump($container);
-//                //var_dump($stdTable->getHTML());
-                // Get table out of element
-//                $table = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
-//
-//                // Parse table
-//                $tableElement = $this->parseTable($table, $key);
-//
-//                $tableElement->setId($key);
 
                 // Add element to container
                 $container->addInnerElement($stdTable);
@@ -739,7 +728,6 @@ class XWPFToHTMLConverter {
             $cells = java_values($row->getTableICells());
             foreach ($cells as $cellKey => $cell) {
 
-
                 if(java_instanceof($cell,java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))){
 
                 // Create new cell tag
@@ -846,6 +834,7 @@ class XWPFToHTMLConverter {
                 if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFSDTCell'))) {
                     $rowXml = java_values($row->getCtRow()->ToString());
                     $xwpfSdtCell = new XWPFSDTCell($cell, $rowXml);
+                    $xwpfSdtCell->setMainStyleSheet($this->mainStyleSheet);
                     $container = $xwpfSdtCell->parseSDTCell();
                 }
 
@@ -1040,7 +1029,6 @@ class XWPFToHTMLConverter {
         //Create java big integer object
         $numId = new Java('java.math.BigInteger',$numberingInfo['numId']);
 
-
         $abstractNumId = java_values($numbering->getAbstractNumId($numId));
 
         if(!is_object($abstractNumId)){
@@ -1116,7 +1104,6 @@ class XWPFToHTMLConverter {
         if(!is_null($abstractNum)) {
             $listProperties = $this->extractListProperties($abstractNum, $numberingStyleList);
         }else{
-
             $listProperties = array('type'=>'disc');
         }
         $listItemStyle = new HTMLElement(HTMLElement::LI);
