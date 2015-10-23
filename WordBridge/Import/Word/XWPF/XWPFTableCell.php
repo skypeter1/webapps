@@ -1,6 +1,7 @@
 <?php
 
-//include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/HTMLElement.php';
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFParagraph.php';
+
 /**
  * Created by PhpStorm.
  * User: root
@@ -10,14 +11,16 @@
 class XWPFTableCell
 {
     private $cell;
+    private $mainStyleSheet;
 
-    function __construct($cell)
+    function __construct($cell, $mainStyleSheet)
     {
         if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))) {
             $this->cell = $cell;
         } else {
             throw new Exception("[XWPFTableCell::new XWPFTableCell] Cell cannot be null");
         }
+        $this->mainStyleSheet = $mainStyleSheet;
     }
 
     public function getPart()
@@ -121,7 +124,7 @@ class XWPFTableCell
             $bottomColor = $tcBorders->xpath("wbottom")[0]["wcolor"];
 
             $borders['bottom']['val'] = (is_object($bottomVal)) ? (string)$bottomVal : "";
-            $borders['bottom']['size'] = (is_object($bottomSize)) ? (string)$bottomSize : "";
+            $borders['bottom']['size'] = (is_object($bottomSize)) ? (string)round($bottomSize / 4) : "";
             $borders['bottom']['space'] = (is_object($bottomSpace)) ? (string)$bottomSpace : "";
             $borders['bottom']['color'] = (is_object($bottomColor)) ? (string)$bottomColor : "";
 
@@ -174,9 +177,37 @@ class XWPFTableCell
     public function processTableCellStyle()
     {
         $cellClass = new StyleClass();
+        $borders = $this->getBorderProperties();
+
+        //Assign borders to style
+        $cellClass->setAttribute('border-bottom', $borders['bottom']['size']);
+
         $cttc = $this->getCTTc();
-        var_dump($cttc);
+        //var_dump($cttc);
         return $cellClass;
+    }
+
+
+    public function parseTableCell()
+    {
+
+        $cellContainer = new HTMLElement(HTMLElement::TD);
+        $paragraphs = $this->getParagraphs();
+
+        foreach ($paragraphs as $javaParagraph) {
+            $paragraph = new XWPFParagraph($javaParagraph, $this->mainStyleSheet);
+            $paragraphContainer = $paragraph->parseParagraph();
+            $cellContainer->addInnerElement($paragraphContainer);
+        }
+
+        //Set cell style class
+        if(isset($this->mainStyleSheet) and is_a($this->mainStyleSheet,'StyleSheet')){
+            $cellClass = $this->processTableCellStyle();
+            $className = $this->mainStyleSheet->getClassName($cellClass);
+            $cellContainer->setClass($className);
+        }
+
+        return $cellContainer;
     }
 
 }

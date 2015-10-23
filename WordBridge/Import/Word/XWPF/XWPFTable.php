@@ -3,47 +3,40 @@
 include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFTableRow.php';
 include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFTableCell.php';
 include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFSDTCell.php';
-//include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/StyleClass.php';
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFStyle.php';
+
 /**
  * @author Peter Arboleda
  * Date: 10/9/15
  * Time: 10:41 AM
  */
+
 class XWPFTable
 {
     private $javaTable;
     private $tableKey;
-    private $mainStyle;
+    private $mainStyleSheet;
     private $element;
 
 
-    function __construct($element, $key, $mainStyle)
+    /**
+     * @param $element
+     * @param $key
+     * @param $mainStyleSheet
+     * @throws Exception
+     */
+    function __construct($element, $key, $mainStyleSheet)
     {
-
         try {
             $table = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
         } catch (Exception $ex) {
             $ex->getMessage();
             return null;
         }
-
-        if (is_a($mainStyle, 'StyleSheet')) {
-            $this->mainStyle = $mainStyle;
-        } else {
-            throw new Exception('The parameter mainStyle must be a StyleSheet');
-            return null;
-        }
         $this->javaTable = $table;
         $this->tableKey = $key;
         $this->element = $element;
-    }
-
-    /**
-     * @return StyleSheet
-     */
-    public function getMainStyle()
-    {
-        return $this->mainStyle;
+        $this->mainStyleSheet = $mainStyleSheet;
     }
 
     /**
@@ -100,19 +93,10 @@ class XWPFTable
         return $rows;
     }
 
-    /**
-     * @return $rows
-     */
-    public function getCellMarginBottom()
-    {
-        try {
-            $marginBottom = java_values($this->javaTable->getCellMarginBottom());
-        } catch (Exception $ex) {
-            $marginBottom = null;
-        }
-        return $marginBottom;
+    public function getDocumentStyles(){
+        $styles = java_values($this->javaTable->getBody()->getXWPFDocument()->getStyles());
+        return $styles;
     }
-
 
     /**
      * @return HTMLElement|null
@@ -124,7 +108,7 @@ class XWPFTable
 
             $container = new HTMLElement(HTMLElement::TABLE);
             $tableStyleClass = $this->processTableStyles($this->javaTable);
-            $tableClassName = $this->getMainStyle()->getClassName($tableStyleClass);
+            $tableClassName = $this->mainStyleSheet->getClassName($tableStyleClass);
             $container->setClass($tableClassName);
             $rows = $this->getRows();
 
@@ -137,7 +121,8 @@ class XWPFTable
                 foreach ($cells as $cell) {
 
                     if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))) {
-                        $cellContainer = $this->parseCell($cell);
+                        $xwpfCell = new XWPFTableCell($cell,$this->mainStyleSheet);
+                        $cellContainer = $xwpfCell->parseTableCell();
                         $rowContainer->addInnerElement($cellContainer);
                     }
 
@@ -156,27 +141,27 @@ class XWPFTable
         }
     }
 
-    public function parseCell($cell)
-    {
-        $cellContainer = new HTMLElement(HTMLElement::TD);
-        $xwpfCell = new XWPFTableCell($cell);
-        $text = $xwpfCell->getText($cell);
-        $borders = $xwpfCell->getBorderProperties();
-        $widht = $xwpfCell->getCellWidht();
-        var_dump($borders);
-        var_dump($widht);
-        $cellContainer->setInnerText($text);
-
-        return $cellContainer;
-    }
-
-
     public function processTableStyles()
     {
         // Create new table style class
         $tableStyleClass = new StyleClass();
+
+        // Check if table has style ID assigned
+        if (java_values($this->javaTable->getStyleID()) != null) {
+
+            // Get style name
+            $style = $this->getDocumentStyles()->getStyle($this->javaTable->getStyleID());
+            $xwpfStyle = new XWPFStyle($style);
+            $tableStyleClass = $xwpfStyle->processStyle();
+        }
+
+        // Set border attributes
+        $tableStyleClass->setAttribute("border-collapse", "inherit");
+
+        // Preset default width of the table to 100%
+        $tableStyleClass->setAttribute("width", "100%");
+
         return $tableStyleClass;
     }
-
 
 }
