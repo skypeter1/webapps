@@ -1,6 +1,6 @@
 <?php
 
-namespace Doctrine\Instantiator\Instantiator;
+namespace Doctrine\Instantiator\Instantiator\PHPUnit_Framework_TestCase;
 include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPFToHTMLConverter.php';
 /**
  * Created by PhpStorm.
@@ -28,14 +28,14 @@ class XWPFToHTMLConverterTest extends PHPUnit_Framework_TestCase
         var_dump($document);
         $this->assertNotNull($document);
     }
-
-    public function testConvertToHTML()
-    {
-        try {
-            $this->document->convertToHTML();
-        }catch (\DoctrineTest\InstantiatorTestAsset\ExceptionAsset $ex){
-        $this->assertInternalType('EceptionAsset', $ex);
-        }
-    }
+//
+//    public function testConvertToHTML()
+//    {
+//        try {
+//            $this->document->convertToHTML();
+//        }catch (\DoctrineTest\InstantiatorTestAsset\ExceptionAsset $ex){
+//        $this->assertInternalType('ExceptionAsset', $ex);
+//        }
+//    }
 
 }
