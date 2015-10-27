@@ -43,11 +43,13 @@ class XWPFStyle
     public function processStyle()
     {
         $type = $this->getType();
-        $styleClass = new StyleClass();
+       // $styleClass = new StyleClass();
         switch ($type) {
             case 'table':
                 $styleClass = $this->processTableStyle();
                 break;
+            default:
+                $styleClass = $this->processParagraphStyle();
         }
         return $styleClass;
     }
@@ -55,7 +57,6 @@ class XWPFStyle
     public function getBorderProperties()
     {
         $borders = array();
-        //var_dump($this->getCTStyle());
         $tcBorders = $this->getXMLObject()->xpath("wtblPr/wtblBorders")[0];
 
         if (empty($tcBorders)) {
@@ -152,15 +153,68 @@ class XWPFStyle
         //Get Borders
         $borders = $this->getBorderProperties();
         $margins = $this->getTableMargins();
-        //var_dump($margins);
+
         $tableStyleClass->setAttribute("border-left", $borders['left']['size'] . "px " . HWPFWrapper::getBorder($borders['left']['val']) . " #" . $borders['left']['color']);
         $tableStyleClass->setAttribute("border-right", $borders['right']['size'] . "px " . HWPFWrapper::getBorder($borders['right']['val']) . " #" . $borders['right']['color']);
         $tableStyleClass->setAttribute("border-top", $borders['top']['size'] . "px " . HWPFWrapper::getBorder($borders['top']['val']) . " #" . $borders['top']['color']);
         $tableStyleClass->setAttribute("border-bottom", $borders['bottom']['size'] . "px " . HWPFWrapper::getBorder($borders['bottom']['val']) . " #" . $borders['bottom']['color']);
 
+        //Default settings
+        $tableStyleClass->setAttribute("border-collapse", "inherit");
+        $tableStyleClass->setAttribute("width", "100%");
+
         if ($color) $tableStyleClass->setAttribute("color", '#' . $color);
 
         return $tableStyleClass;
+    }
+
+    private function getCellStyleBorders()
+    {
+        $cellBorders = array();
+        $tcBorders = $this->getXMLObject()->xpath("wtblPr/wtblBorders")[0];
+
+        if (empty($tcBorders)) {
+            $cellBorders = null;
+        } else {
+
+            $insideHVal = $tcBorders->xpath("winsideH")[0]["wval"];
+            $insideHSize = $tcBorders->xpath("winsideH")[0]["wsz"];
+            $insideHSpace = $tcBorders->xpath("winsideH")[0]["wspace"];
+            $insideHColor = $tcBorders->xpath("winsideH")[0]["wcolor"];
+
+            $cellBorders['insideV']['val'] = (is_object($insideHVal)) ? (string)$insideHVal : "";
+            $cellBorders['insideV']['size'] = (is_object($insideHSize)) ? (string)round($insideHSize / 4) : "";
+            $cellBorders['insideV']['space'] = (is_object($insideHSpace)) ? (string)$insideHSpace : "";
+            $cellBorders['insideV']['color'] = (is_object($insideHColor)) ? (string)$insideHColor : "";
+            if ($cellBorders['insideV']['color'] == "auto") $cellBorders['insideV']['color'] = "000000";
+
+            $insideVVal = $tcBorders->xpath("winsideV")[0]["wval"];
+            $insideVSize = $tcBorders->xpath("winsideV")[0]["wsz"];
+            $insideVSpace = $tcBorders->xpath("winsideV")[0]["wspace"];
+            $insideVColor = $tcBorders->xpath("winsideV")[0]["wcolor"];
+
+            $cellBorders['insideH']['val'] = (is_object($insideVVal)) ? (string)$insideVVal : "";
+            $cellBorders['insideH']['size'] = (is_object($insideVSize)) ? (string)round($insideVSize / 4) : "";
+            $cellBorders['insideH']['space'] = (is_object($insideVSpace)) ? (string)$insideVSpace : "";
+            $cellBorders['insideH']['color'] = (is_object($insideVColor)) ? (string)$insideVColor : "";
+            if ($cellBorders['insideH']['color'] == "auto") $cellBorders['insideH']['color'] = "000000";
+        }
+        return $cellBorders;
+    }
+
+    public function processTableCellStyle()
+    {
+        $tableCellStyleClass = new StyleClass();
+        $cellBorders = $this->getCellStyleBorders();
+
+        if (!is_null($cellBorders)) {
+            $tableCellStyleClass->setAttribute("border-top", $cellBorders['insideV']['size'] . "px " . HWPFWrapper::getBorder($cellBorders['insideV']['val']) . " #" . $cellBorders['insideV']['color']);
+            $tableCellStyleClass->setAttribute("border-bottom", $cellBorders['insideV']['size'] . "px " . HWPFWrapper::getBorder($cellBorders['insideV']['val']) . " #" . $cellBorders['insideV']['color']);
+            $tableCellStyleClass->setAttribute("border-right", $cellBorders['insideH']['size'] . "px " . HWPFWrapper::getBorder($cellBorders['insideH']['val']) . " #" . $cellBorders['insideH']['color']);
+            $tableCellStyleClass->setAttribute("border-left", $cellBorders['insideH']['size'] . "px " . HWPFWrapper::getBorder($cellBorders['insideH']['val']) . " #" . $cellBorders['insideH']['color']);
+        }
+
+        return $tableCellStyleClass;
     }
 
     /**

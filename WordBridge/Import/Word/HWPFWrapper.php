@@ -68,6 +68,15 @@ class HWPFWrapper {
         // Return color
         return $color;
     }
+//
+//    public function getTableCellBorderType($name){
+//
+//        switch($name){
+//            case 'SINGLE'
+//            default: $type = $name; break;
+//        }
+//        return $type;
+//    }
 
     /**
      * Get font family type type
@@ -119,11 +128,20 @@ class HWPFWrapper {
         $types = array('SINGLE' => 'solid',
                        'DASHED' => 'dashed',
                        'DOTTED' => 'dotted',
-                       'DOUBLE' => 'double');
+                       'DOUBLE' => 'double',
+                        'NIL' => 'nil');
         
         // Return border type
         return (@isset($types[strtoupper($name)])) ? $types[strtoupper($name)] : 'solid';
-    }    
+    }
+
+    public static function getTableBorders(){
+        $border = null;
+        switch($border){
+            case 'single':
+        }
+        return $border;
+    }
     
     /**
      * Get justification type

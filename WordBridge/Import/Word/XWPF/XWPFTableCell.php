@@ -174,23 +174,38 @@ class XWPFTableCell
         return $cellWidht;
     }
 
+    private function getColspan()
+    {
+        $cellXML = $this->getXMLCellObject();
+        $gridspan = $cellXML->xpath('*/wgridSpan');
+        $colspan = ($gridspan) ?((string)$gridspan[0]['wval']) : "";
+
+        return $colspan;
+    }
+
+
     public function processTableCellStyle()
     {
         $cellClass = new StyleClass();
-        $borders = $this->getBorderProperties();
 
-        //Assign borders to style
+        $cell_width = $this->getCellWidht();
+        if(!empty($cell_width)) $cellClass->setAttribute('width', $cell_width['value'] . 'px');
+
+        $color = $this->getColor();
+        if(!is_null($color)) {
+            echo $color;
+            $cellClass->setAttribute("background-color", "#" . "$color");
+        }
+
+        $borders = $this->getBorderProperties();
         $cellClass->setAttribute('border-bottom', $borders['bottom']['size']);
 
-        $cttc = $this->getCTTc();
-        //var_dump($cttc);
         return $cellClass;
     }
 
 
     public function parseTableCell()
     {
-
         $cellContainer = new HTMLElement(HTMLElement::TD);
         $paragraphs = $this->getParagraphs();
 
@@ -200,12 +215,9 @@ class XWPFTableCell
             $cellContainer->addInnerElement($paragraphContainer);
         }
 
-        //Set cell style class
-        if(isset($this->mainStyleSheet) and is_a($this->mainStyleSheet,'StyleSheet')){
-            $cellClass = $this->processTableCellStyle();
-            $className = $this->mainStyleSheet->getClassName($cellClass);
-            $cellContainer->setClass($className);
-        }
+        //Set Attributes
+        $colspan = $this->getColspan();
+        if(!empty($colspan)) $cellContainer->setAttribute('colspan', $colspan);
 
         return $cellContainer;
     }

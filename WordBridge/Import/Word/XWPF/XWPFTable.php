@@ -107,9 +107,14 @@ class XWPFTable
         if (is_object($this->javaTable)) {
 
             $container = new HTMLElement(HTMLElement::TABLE);
-            $tableStyleClass = $this->processTableStyles($this->javaTable);
-            $tableClassName = $this->mainStyleSheet->getClassName($tableStyleClass);
-            $container->setClass($tableClassName);
+            $styleClass = $this->processTableStyles();
+            $tableStyleClass = (!empty($styleClass)) ? $styleClass['table'] : $styleClass;
+
+            if(is_a($tableStyleClass,'StyleClass')){
+                $tableClassName = $this->mainStyleSheet->getClassName($tableStyleClass);
+                $container->setClass($tableClassName);
+            }
+
             $rows = $this->getRows();
 
             foreach ($rows as $key => $row) {
@@ -123,6 +128,15 @@ class XWPFTable
                     if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))) {
                         $xwpfCell = new XWPFTableCell($cell,$this->mainStyleSheet);
                         $cellContainer = $xwpfCell->parseTableCell();
+                        $tableCellStyle = $xwpfCell->processTableCellStyle();
+                        $cellStyles = (!empty($styleClass)) ? $styleClass['table'] : $styleClass;
+
+                        //Set cell style class
+                        if(isset($this->mainStyleSheet) and is_a($this->mainStyleSheet,'StyleSheet')){
+                            $cellStyleClass = $tableCellStyle->mergeStyleClass($cellStyles);
+                            $className = $this->mainStyleSheet->getClassName($cellStyleClass);
+                            $cellContainer->setClass($className);
+                        }
                         $rowContainer->addInnerElement($cellContainer);
                     }
 
@@ -143,25 +157,25 @@ class XWPFTable
 
     public function processTableStyles()
     {
-        // Create new table style class
-        $tableStyleClass = new StyleClass();
+        $tableStyles = array();
 
         // Check if table has style ID assigned
-        if (java_values($this->javaTable->getStyleID()) != null) {
+        if ($this->getStyleID() != null) {
 
             // Get style name
             $style = $this->getDocumentStyles()->getStyle($this->javaTable->getStyleID());
+
             $xwpfStyle = new XWPFStyle($style);
             $tableStyleClass = $xwpfStyle->processStyle();
+            $tableStyleClass->setAttribute("border-collapse", "inherit");
+            $tableStyleClass->setAttribute("width", "100%");
+            $tableStyles['table'] = $tableStyleClass;
+
+            $tableCellStyleClass = $xwpfStyle->processTableCellStyle();
+            $tableStyles['cell'] = $tableCellStyleClass;
         }
 
-        // Set border attributes
-        $tableStyleClass->setAttribute("border-collapse", "inherit");
-
-        // Preset default width of the table to 100%
-        $tableStyleClass->setAttribute("width", "100%");
-
-        return $tableStyleClass;
+        return $tableStyles;
     }
 
 }

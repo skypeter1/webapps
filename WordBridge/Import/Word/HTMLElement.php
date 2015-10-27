@@ -129,6 +129,7 @@ class HTMLElement{
      */
     public function getClass()
     {
+
         if (array_key_exists('class', $this->attributes)){
             return $this->attributes['class'];
         }

@@ -1,11 +1,13 @@
 <?php
+
 /**
-* StyleClass is a class that holds an information of one CSS class-element, 
-* including name, attributes, and a unique hash, in order to 
-* make sure a CSS style with reusable classes.
-* @author Avetis Zakharyan
-*/
-class StyleClass{
+ * StyleClass is a class that holds an information of one CSS class-element,
+ * including name, attributes, and a unique hash, in order to
+ * make sure a CSS style with reusable classes.
+ * @author Avetis Zakharyan
+ */
+class StyleClass
+{
 
     /**
      * Name of CSS class
@@ -25,7 +27,7 @@ class StyleClass{
     /**
      * Hash unique identifier for attribute set
      */
-    private $CSSstring;	
+    private $CSSstring;
 
     /**
      * Inner value used to udentify if hash needs to be just retreived or reclacualted
@@ -45,7 +47,7 @@ class StyleClass{
         $this->attribute = array();
         $this->CSSstring = '';
     }
-    
+
     /**
      * Get class name
      * @return  string
@@ -63,7 +65,7 @@ class StyleClass{
     {
         $this->name = $name;
     }
-    
+
     /**
      * Set CSS attribute
      * @param   string  Key - name of attribute to add, if key already exists, then previous value will be overwritten
@@ -74,7 +76,7 @@ class StyleClass{
     {
         // Return if value is empty
         if (empty($value)) return;
-        
+
         // Assign attribute and set it to dirty
         $this->dirty = true;
         $this->attributes[$key] = $value;
@@ -98,7 +100,7 @@ class StyleClass{
         $existence = array_key_exists($key, $this->attributes);
         return $existence;
     }
-    
+
     /**
      * Get CSS attribute value
      * @param   string  Key
@@ -108,7 +110,7 @@ class StyleClass{
     {
         return $this->attributes[$key];
     }
-    
+
     /**
      * Remove CSS attribute
      * @param   string  Key
@@ -133,15 +135,40 @@ class StyleClass{
             ksort($this->attributes);
             $serialized = serialize($this->attributes);
             $this->hash = md5($serialized);
-            
+
             // Set dirty to false
             $this->dirty = false;
         }
-        
+
         // Return hash
         return $this->hash;
-    }	
-    
+    }
+
+    /**
+     * @param $styleToMerge
+     * @return StyleClass
+     */
+    public function mergeStyleClass($styleToMerge)
+    {
+        if (is_a($styleToMerge, 'StyleClass')) {
+            $mergedStyle = new StyleClass();
+            $attributes = $this->getAttributes();
+            foreach ($attributes as $key => $attribute) {
+                $mergedStyle->setAttribute($key, $attribute);
+            }
+            $mergeAttributes = $styleToMerge->getAttributes();
+            foreach ($mergeAttributes as $merge_key => $mergeAttribute) {
+                if(!$this->attributeExists($merge_key)) {
+                    $mergedStyle->setAttribute($merge_key, $mergeAttribute);
+                }
+            }
+
+        } else {
+            $mergedStyle = new StyleClass();
+        }
+        return $mergedStyle;
+    }
+
     /**
      * Get the final CSS string
      * @return  string
@@ -150,23 +177,23 @@ class StyleClass{
     {
         // Check if css is dirty
         if ($this->css_dirty) {
-            
+
             // Open class definition
-            $CSSClass = '.'.$this->name." { \n";
-            
+            $CSSClass = '.' . $this->name . " { \n";
+
             // Check and add attributes to the class
             if ($this->attributes) {
                 foreach ($this->attributes as $key => $value) {
-                    $CSSClass .= "	".$key.':'.$value."; \n";
+                    $CSSClass .= "	" . $key . ':' . $value . "; \n";
                 }
             }
-            
+
             // Finalize class
             $CSSClass .= "}";
             $this->CSSstring = $CSSClass;
             $this->css_dirty = false;
         }
-        
+
         // Return CSS
         return $this->CSSstring;
     }
