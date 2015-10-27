@@ -81,6 +81,7 @@ class XWPFToHTMLConverter {
     private $images;
     private $images_data;
     private $images_currentIndex = 0;
+    private $unsupportedImageFormats;
 
     private $_tmp_path;
     private $_progress;
@@ -150,6 +151,10 @@ class XWPFToHTMLConverter {
     private $localJava;
 
     /**
+     *
+     */
+
+    /**
      * Constructor that needs to get a Java Bridge classes
      * @param bool $tmp_path
      * @param bool $progress
@@ -202,7 +207,7 @@ class XWPFToHTMLConverter {
         // Include Java PHP local bridge library
         include($local);
         $this->localJava = $local;
-        var_dump($this->localJava);
+        //var_dump($this->localJava);
         // Adjust progress step
         //$this->_progress->incrementStep();
     }
@@ -239,6 +244,7 @@ class XWPFToHTMLConverter {
         $this->sectionContainer = null;
         $this->contador = null;
         $this->parsingFile = $docx_file;
+        $this->unsupportedImageFormats = array('emf' => 'emf', 'wmf' => 'wmf');
 
         //Load document and update progress
         $this->document = $this->loadDocx($docx_file);
@@ -446,13 +452,21 @@ class XWPFToHTMLConverter {
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
 
                 $stylesheet = $this->mainStyleSheet;
-                //var_dump(get_class($stylesheet));
-
+//              var_dump(get_class($stylesheet));
+//
                 $xwpfTable =  new XWPFTable($element, $key, $stylesheet);
                 $stdTable = $xwpfTable->parseTable();
 
-                // Add element to container
+                //Add element to container
                 $container->addInnerElement($stdTable);
+//                // Get table out of element
+//                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
+//
+//                // Parse table
+//                $tableElement = $this->parseTable($tableHead, $key);
+//
+//                //Add table to the
+//                $container->addInnerElement($tableElement);
             }
 
             // Check if element is a paragraph
@@ -488,45 +502,40 @@ class XWPFToHTMLConverter {
                     // Check if this is a page break
                     if (is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::PAGE_BREAK) {
 
-                        $sectionNew = new HTMLElement(HTMLElement::DIV);
-                        $sectionArray = array();
+//                        $sectionNew = new HTMLElement(HTMLElement::DIV);
+//                        $sectionArray = array();
+//
+//                        $counter = 0;
+//                        $contentMarkup = array();
 
-                       // echo "<table style='border: 1px solid black'>";
-                        $counter = 0;
-                        $contentMarkup = array();
-
-                        foreach ($container->getInnerElements() as $key=>$element){
-
-//                            echo "<tr style='border:1px solid black'>";
-//                            echo "<td style='border: 1px solid black'>".$element->getId()."</td>";
-//                            echo "<td style='border: 1px solid black'>".java_values($element->getInnerText())."</td>";
-//                            echo "</tr>";
-                            $contentMarkup[$element->getId()] = $element;
-
-                            $atributos = $element->getAttributes();
-
-                            if(array_key_exists('data',$atributos)){
-                                $this->contador = $element->getId();
-                                //echo $counter."-";
-                                $sectionArray[$counter] = $element->getId();
-                                $counter++;
-                            }else {
-                                //$sectionNew->addInnerElement($element);
-                            }
-                        }
-
-                        foreach($sectionArray as $key=>$section){
-                            $next = $key+1;
-                            $articuloNew = new HTMLElement(HTMLElement::ARTICLE);
-                            for($i=$section;$i<$sectionArray[$next];$i++){
-                                $articuloNew->addInnerElement($contentMarkup[$i]);
-                            }
-                            $sectionNew->addInnerElement($articuloNew);
-                        }
-
-                        $this->contador = end($sectionArray);
-                        //echo $this->contador."contador";
-
+//                        foreach ($container->getInnerElements() as $key=>$element){
+//
+////                            echo "<tr style='border:1px solid black'>";
+////                            echo "<td style='border: 1px solid black'>".$element->getId()."</td>";
+////                            echo "<td style='border: 1px solid black'>".java_values($element->getInnerText())."</td>";
+////                            echo "</tr>";
+//                            $contentMarkup[$element->getId()] = $element;
+//
+//                            $atributos = $element->getAttributes();
+//
+//                            if(array_key_exists('data',$atributos)){
+//                                $this->contador = $element->getId();
+//                                //echo $counter."-";
+//                                $sectionArray[$counter] = $element->getId();
+//                                $counter++;
+//                            }else {
+//                                //$sectionNew->addInnerElement($element);
+//                            }
+//                        }
+//
+//                        foreach($sectionArray as $key=>$section){
+//                            $next = $key+1;
+//                            $articuloNew = new HTMLElement(HTMLElement::ARTICLE);
+//                            for($i=$section;$i<$sectionArray[$next];$i++){
+//                                $articuloNew->addInnerElement($contentMarkup[$i]);
+//                            }
+//                            $sectionNew->addInnerElement($articuloNew);
+//                        }
                         // Add container to inner body
                         $this->htmlDocument->setBody($container);
                         //$this->htmlDocument->setBody($sectionNew);
@@ -561,7 +570,6 @@ class XWPFToHTMLConverter {
                         $container->setId($key);
                         // Add element to container
                         $container->addInnerElement($paragraphHTMLElement);
-
                     }
 
                 }
@@ -1767,6 +1775,40 @@ class XWPFToHTMLConverter {
         // Return styled class
         return $styleClass;
     }
+
+    private function returnUnssuportedImageMessage($name)
+    {
+        $messageBox = new HTMLElement(HTMLElement::DIV);
+        $boxStyleClass =  new StyleClass();
+
+        $messageText = "This image could not be imported. It's not supported format.";
+        $messageParagraph = new HTMLElement(HTMLElement::P);
+        $messageParagraph->setInnerText($messageText);
+        $messageParagraph->setAttribute('style',"font-weight: bold");
+        $messageBox->addInnerElement($messageParagraph);
+
+        $imageName = (string)$name;
+        $nameParagraph = new HTMLElement(HTMLElement::P);
+        $nameParagraph->setInnerText($imageName);
+        $messageBox->addInnerElement($nameParagraph);
+
+        $boxStyleClass->setAttribute('width','75%');
+        $boxStyleClass->setAttribute('margin','0 auto');
+        $boxStyleClass->setAttribute('background-color','#ffcfba');
+        $boxStyleClass->setAttribute('color','#d91c24');
+        $boxStyleClass->setAttribute('font-size','14px');
+        $boxStyleClass->setAttribute('font-family','Roboto, sans-serif');
+        $boxStyleClass->setAttribute('padding-bottom','25px');
+        $boxStyleClass->setAttribute('padding-top','25px');
+        $boxStyleClass->setAttribute('padding-right','25px');
+        $boxStyleClass->setAttribute('padding-left','25px');
+        $boxStyleClass->setAttribute('text-align','center');
+
+        $className = $this->mainStyleSheet->getClassName($boxStyleClass);
+        $messageBox->setClass($className);
+
+        return $messageBox;
+    }
     
     /**
      * Parses a picture element of HWPF document
@@ -1779,7 +1821,12 @@ class XWPFToHTMLConverter {
         $pictureData = $picture->getPictureData();
         $picContent = java_values($pictureData->getData());
         $picName = java_values($pictureData->getFileName());
-        $picType = java_values($pictureData->getPictureType());
+        $picExtension = java_values($pictureData->suggestFileExtension());
+
+        if(array_key_exists($picExtension,$this->unsupportedImageFormats)){
+            $message = $this->returnUnssuportedImageMessage($picName);
+            return $message;
+        }
 
         // Get picture dimensions
         $ct_xml = java_values($picture->getCTPicture()->toString());
