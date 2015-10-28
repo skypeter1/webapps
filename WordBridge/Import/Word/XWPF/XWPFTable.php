@@ -129,7 +129,7 @@ class XWPFTable
                         $xwpfCell = new XWPFTableCell($cell,$this->mainStyleSheet);
                         $cellContainer = $xwpfCell->parseTableCell();
                         $tableCellStyle = $xwpfCell->processTableCellStyle();
-                        $cellStyles = (!empty($styleClass)) ? $styleClass['table'] : $styleClass;
+                        $cellStyles = (!empty($styleClass)) ? $styleClass['cell'] : $styleClass;
 
                         //Set cell style class
                         if(isset($this->mainStyleSheet) and is_a($this->mainStyleSheet,'StyleSheet')){

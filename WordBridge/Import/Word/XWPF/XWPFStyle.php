@@ -43,13 +43,12 @@ class XWPFStyle
     public function processStyle()
     {
         $type = $this->getType();
-       // $styleClass = new StyleClass();
         switch ($type) {
             case 'table':
                 $styleClass = $this->processTableStyle();
                 break;
-            default:
-                $styleClass = $this->processParagraphStyle();
+//            default:
+//                $styleClass = new StyleClass();
         }
         return $styleClass;
     }
@@ -152,7 +151,7 @@ class XWPFStyle
 
         //Get Borders
         $borders = $this->getBorderProperties();
-        $margins = $this->getTableMargins();
+        //$margins = $this->getTableMargins();
 
         $tableStyleClass->setAttribute("border-left", $borders['left']['size'] . "px " . HWPFWrapper::getBorder($borders['left']['val']) . " #" . $borders['left']['color']);
         $tableStyleClass->setAttribute("border-right", $borders['right']['size'] . "px " . HWPFWrapper::getBorder($borders['right']['val']) . " #" . $borders['right']['color']);

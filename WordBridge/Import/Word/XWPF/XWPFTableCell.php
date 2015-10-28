@@ -193,12 +193,12 @@ class XWPFTableCell
 
         $color = $this->getColor();
         if(!is_null($color)) {
-            echo $color;
+            //if($color == 'auto') $color = "000000";
             $cellClass->setAttribute("background-color", "#" . "$color");
         }
 
         $borders = $this->getBorderProperties();
-        $cellClass->setAttribute('border-bottom', $borders['bottom']['size']);
+        //$cellClass->setAttribute('border-bottom', $borders['bottom']['size']);
 
         return $cellClass;
     }
