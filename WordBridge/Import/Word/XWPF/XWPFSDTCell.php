@@ -43,12 +43,10 @@ class XWPFSDTCell
         return $content;
     }
 
-    /**
-     * @return array|null|object
-     */
-    private function getSDTCell()
+    public function getDocumentStyles()
     {
-        return $this->sdtCell;
+        $styles = java_values($this->sdtCell->getBody()->getXWPFDocument()->getStyles());
+        return $styles;
     }
 
     /**
@@ -73,21 +71,26 @@ class XWPFSDTCell
 
     public function parseHeaderTableCell($stdRow)
     {
-
         $stdCellContainer = new HTMLElement(HTMLElement::TD);
         $tdStyle = new StyleClass();
         $wsdt = $stdRow->xpath('wsdtPr/walias');
-
-        $st = $stdRow->xpath('wsdtContent/wtc/wtcPr/wtcBorders')[0];
+        $wtcBorders = $stdRow->xpath('wsdtContent/wtc/wtcPr/wtcBorders');
+        if($wtcBorders)
+        $st = (empty(!$wtcBorders)) ? $wtcBorders[0] : null ;
         $borders = $this->getBorderProperties($st);
         if (!is_null($borders) and is_array($borders)) {
-            if (array_key_exists('bottom', $borders)) {
-                $tdStyle->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($borders['bottom']['val']) . " #" . $borders['bottom']['color']);
-            }
+            if (array_key_exists('bottom', $borders)) $tdStyle->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($borders['bottom']['val']) . " #" . $borders['bottom']['color']);
+            if (array_key_exists('top', $borders)) $tdStyle->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($borders['top']['val']) . " #" . $borders['top']['color']);
+            if (array_key_exists('right', $borders)) $tdStyle->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($borders['right']['val']) . " #" . $borders['right']['color']);
+            if (array_key_exists('left', $borders)) $tdStyle->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($borders['left']['val']) . " #" . $borders['left']['color']);
         }
 
         $backgroundColor = $stdRow->xpath('wsdtContent/wtc/wtcPr/wshd')[0]['wfill'];
-        $tdStyle->setAttribute('background-color', "#" . $backgroundColor);
+        if($backgroundColor == "FFFFFF"){
+            $tdStyle->setAttribute('background-color', "#" . $borders['bottom']['color']);
+        }else {
+            $tdStyle->setAttribute('background-color', "#" . $backgroundColor);
+        }
 
         $textBox = "";
         foreach ($wsdt as $walias) {
@@ -101,7 +104,6 @@ class XWPFSDTCell
             $cnm = $this->mainStyleSheet->getClassName($tdStyle);
             $stdCellContainer->setClass($cnm);
         }
-
         $stdCellContainer->setAttribute('colspan', '2');
 
         return $stdCellContainer;
@@ -127,33 +129,13 @@ class XWPFSDTCell
             $stdRowContainerHeader->addInnerElement($stdCellContainer);
 
             /****** SDT ********/
-//            $wsdtTableLook = $this->selectTableLook($stdRow);
-//            var_dump($wsdtTableLook);
-//
-//            switch($wsdtTableLook){
-//                case 'normal':
-//                    $stdCellInfoContainer = $this->parseTableHeaderContent($stdRow);
-//                    break;
-//                case 'firstRow':
-//                    $stdRowContainerHeaderFirstRow = $this->parseTableHeaderContent($stdRow);
-//                    //Add cell to the row
-//                    $stdRowContainerHeaderFirstRow->addInnerElement($stdRowContainerHeaderFirstRow);
-//                    break;
-//            }
             $stdCellInfoContainer = $this->parseSDT($stdRow);
             if (is_array($stdCellInfoContainer)) {
-                var_dump(count($stdCellInfoContainer));
                 $rowID = count($stdCellInfoContainer);
                 if ($rowID < count($stdCellInfoContainer)) {
-                    echo $rowID;
                     $rowID++;
-                    //var_dump($stdCellInfoContainer[$rowID]);
                     if (is_a($stdCellInfoContainer[$rowID], 'HTMLElement')) {
-                       // var_dump($stdCellInfoContainer[$rowID]);
-                        //var_dump($rowID);
-                       // echo $rowID;
                         $stdRowContainerHeaderFirstRow->addInnerElement($stdCellInfoContainer[$rowID]);
-
                     }
                 }
             } else {
@@ -181,7 +163,6 @@ class XWPFSDTCell
 
     public function selectTableLook($stdRow)
     {
-
         $wtblLook = $stdRow->xpath('wsdtContent/wtc/wtbl/wtblPr/wtblLook')[0];
         $conditionalFormatting = null;
 
@@ -205,16 +186,14 @@ class XWPFSDTCell
      */
     private function parseSDTContents($stdRow)
     {
-
         $stdCellContentContainer = new HTMLElement(HTMLElement::TD);
         $wsdtContentTable = $stdRow->xpath('wsdtContent/wtc/wtbl')[0];
-
         $conditionalFormatting = $this->selectTableLook($stdRow);
 
         switch ($conditionalFormatting) {
-//            case 'firstRow':
-//                $stdCellContentContainer = $this->parseSTDParagraphsFirstRow($wsdtContentTable, $stdCellContentContainer);
-//                break;
+            case 'firstRow':
+                $stdCellContentContainer = $this->parseSTDParagraphsFirstRow($wsdtContentTable);
+                break;
             case 'normal':
                 $stdCellContentContainer = $this->parseSTDParagraphs($wsdtContentTable, $stdCellContentContainer);
                 break;
@@ -223,40 +202,66 @@ class XWPFSDTCell
         return $stdCellContentContainer;
     }
 
-    public function parseSTDParagraphsFirstRow($wsdtContentTable, $stdCellContentContainer)
+    public function parseSTDParagraphsFirstRow($wsdtContentTable)
     {
+        $tableContainer = new HTMLElement(HTMLElement::TABLE);
 
         foreach ($wsdtContentTable as $key => $sdtParagraph) {
-            $sdtFields = $sdtParagraph->xpath('wsdt/wsdtPr');
 
-            if (!empty($sdtFields)) {
-                $choiceContainer = $this->parseChoiceFields($sdtParagraph);
-            }
-            $stdParagraphContainer = new HTMLElement(HTMLElement::P);
-            $paragraphChars = $sdtParagraph->xpath('wsdt/wsdtContent/wtc/wp/wr/wt');
+            $sdtRows = $sdtParagraph->xpath('wsdt');
+            foreach ($sdtRows as $sdtRow) {
+                $stdRowContainerHeader = new HTMLElement(HTMLElement::TR);
+                $stdCellContainer = $this->parseHeaderTableCell($sdtRow);
+                $stdRowContainerHeader->addInnerElement($stdCellContainer);
 
-            if (isset($choiceContainer) and !is_null($choiceContainer)) {
-                $stdCellContentContainer->addInnerElement($choiceContainer);
-                $stdParagraphContainer->setAttribute('style', 'display:none');
-            }
-
-            if (!empty($paragraphChars)) {
-                $textBoxContent = '';
-                foreach ($paragraphChars as $char) {
-                    $textBoxContent .= (string)$char;
+                $stdRowContainer = new HTMLElement(HTMLElement::TR);
+                $stdCellContainer = new HTMLElement(HTMLElement::TD);
+                $sdtParagraphReal = $sdtRow->xpath('wsdtContent/wtc/wp');
+                if (!empty($sdtParagraphReal)) {
+                    $stdCellContainer = $this->parseFirstRowParagraphs($sdtParagraphReal, $stdCellContainer);
                 }
-                $text = XhtmlEntityConverter::convertToNumericalEntities(htmlentities($textBoxContent, ENT_COMPAT | ENT_XHTML));
-                $stdParagraphContainer->setInnerText($text);
-                $stdCellContentContainer->addInnerElement($stdParagraphContainer);
+                $stdRowContainer->addInnerElement($stdCellContainer);
+                $tableContainer->addInnerElement($stdRowContainerHeader);
+                $tableContainer->addInnerElement($stdRowContainer);
+
             }
         }
 
-        return $stdCellContentContainer;
+        return $tableContainer;
+    }
+
+    private function parseFirstRowParagraphs($sdtParagraphReal, $stdCellContainer)
+    {
+        foreach ($sdtParagraphReal as $real) {
+            $stdParagraphContainer = new HTMLElement(HTMLElement::P);
+
+            $styleReal = $real->xpath('wpPr/wpStyle');
+            if (!empty($styleReal)) {
+                $styleId = (string)$styleReal[0]['wval'];
+                $styles = java_values($this->sdtCell->getDocument()->getStyles()->getStyle($styleId));
+                $xwpfStyle = new XWPFStyle($styles);
+                $tableStyleClass = $xwpfStyle->processParagraphStyle();
+                $className = $this->mainStyleSheet->getClassName($tableStyleClass);
+                $stdParagraphContainer->setClass($className);
+            }
+            $paragraphChars = $real->xpath('wr/wt');
+
+            if (!empty($paragraphChars)) {
+                foreach ($paragraphChars as $char) {
+                    $spanContainer = new HTMLElement(HTMLElement::SPAN);
+                    $texto = (string)$char;
+                    $text = XhtmlEntityConverter::convertToNumericalEntities(htmlentities($texto, ENT_COMPAT | ENT_XHTML));
+                    $spanContainer->setInnerText($text);
+                    $stdParagraphContainer->addInnerElement($spanContainer);
+                }
+            }
+            $stdCellContainer->addInnerElement($stdParagraphContainer);
+        }
+        return $stdCellContainer;
     }
 
     public function parseSTDParagraphs($wsdtContentTable, $stdCellContentContainer)
     {
-
         foreach ($wsdtContentTable as $key => $sdtParagraph) {
             $sdtFields = $sdtParagraph->xpath('wsdt/wsdtPr');
 
@@ -265,7 +270,6 @@ class XWPFSDTCell
             }
             $stdParagraphContainer = new HTMLElement(HTMLElement::P);
             $paragraphChars = $sdtParagraph->xpath('wsdt/wsdtContent/wtc/wp/wr/wt');
-            //$choiceContainer = $this->parseChoiceFields($sdtParagraph);
 
             if (isset($choiceContainer) and !is_null($choiceContainer)) {
                 $stdCellContentContainer->addInnerElement($choiceContainer);
@@ -307,15 +311,11 @@ class XWPFSDTCell
 
     public function parseBodySDT($stdRow)
     {
-
         $cells = array();
-        //$stdCellInfoContainer = new HTMLElement(HTMLElement::TD);
         $wsdtContentParagraphs = $stdRow->xpath('wsdtContent/wtc/wtbl/wtr/wsdt/wsdtPr/walias');
 
         foreach ($wsdtContentParagraphs as $sdtParagraph) {
             $stdCellInfoContainer = new HTMLElement(HTMLElement::TD);
-            //var_dump($sdtParagraph);
-            //Paragraph Conversion
             $stdParagraphContainer = new HTMLElement(HTMLElement::P);
             $backgroundColor = $stdRow->xpath('wsdtContent/wtc/wtcPr/wshd')[0]['wfill'];
             $stdCellInfoContainer->setAttribute('style', 'background-color:#' . $backgroundColor);
@@ -334,7 +334,6 @@ class XWPFSDTCell
 
     public function parseTableHeaderContent($stdRow)
     {
-
         $stdCellInfoContainer = new HTMLElement(HTMLElement::TD);
         $wsdtContentParagraphs = $stdRow->xpath('wsdtContent/wtc/wtbl/wtr/wsdt/wsdtPr/walias');
 
@@ -358,7 +357,7 @@ class XWPFSDTCell
     public function getBorderProperties($tcBorders)
     {
         $borders = array();
-        if (empty($tcBorders)) {
+        if (empty($tcBorders) and is_null($tcBorders)) {
             $borders = null;
         } else {
             $bottomVal = $tcBorders->xpath("wbottom")[0]["wval"];
@@ -367,38 +366,43 @@ class XWPFSDTCell
             $bottomColor = $tcBorders->xpath("wbottom")[0]["wcolor"];
 
             $borders['bottom']['val'] = (is_object($bottomVal)) ? (string)$bottomVal : "";
-            $borders['bottom']['size'] = (is_object($bottomSize)) ? (string)$bottomSize : "";
+            $borders['bottom']['size'] = (is_object($bottomSize)) ? (string)round($bottomSize / 4) : "";
             $borders['bottom']['space'] = (is_object($bottomSpace)) ? (string)$bottomSpace : "";
             $borders['bottom']['color'] = (is_object($bottomColor)) ? (string)$bottomColor : "";
-//            $topVal = $tcBorders->xpath("wtop")[0]["wval"];
-//            $topSize = $tcBorders->xpath("wtop")[0]["wsz"];
-//            $topSpace = $tcBorders->xpath("wtop")[0]["wspace"];
-//            $topColor = $tcBorders->xpath("wtop")[0]["wcolor"];
-//
-//            $borders['top']['val'] = (is_object($topVal)) ? (string)$topVal : "";
-//            $borders['top']['size'] = (is_object($topSize)) ? (string)$topSize : "";
-//            $borders['top']['space'] = (is_object($topSpace)) ? (string)$topSpace : "";
-//            $borders['top']['color'] = (is_object($topColor)) ? (string)$topColor : "";
-//
-//            $rightVal = $tcBorders->xpath("wright")[0]["wval"];
-//            $rightSize = $tcBorders->xpath("wright")[0]["wsz"];
-//            $rightSpace = $tcBorders->xpath("wright")[0]["wspace"];
-//            $rightColor = $tcBorders->xpath("wright")[0]["wcolor"];
-//
-//            $borders['right']['val'] = (is_object($rightVal)) ? (string)$rightVal : "";
-//            $borders['right']['size'] = (is_object($rightSize)) ? (string)$rightSize : "";
-//            $borders['right']['space'] = (is_object($rightSpace)) ? (string)$rightSpace : "";
-//            $borders['right']['color'] = (is_object($rightColor)) ? (string)$rightColor : "";
-//
-//            $leftVal = $tcBorders->xpath("wleft")[0]["wval"];
-//            $leftSize = $tcBorders->xpath("wleft")[0]["wsz"];
-//            $leftSpace = $tcBorders->xpath("wleft")[0]["wspace"];
-//            $leftColor = $tcBorders->xpath("wleft")[0]["wcolor"];
-//
-//            $borders['left']['val'] = (is_object($leftVal)) ? (string)$leftVal : "";
-//            $borders['left']['size'] = (is_object($leftSize)) ? (string)$leftSize : "";
-//            $borders['left']['space'] = (is_object($leftSpace)) ? (string)$leftSpace : "";
-//            $borders['left']['color'] = (is_object($leftColor)) ? (string)$leftColor : "";
+            if ($borders['bottom']['color'] == "auto") $borders['bottom']['color'] = "000000";
+
+            $topVal = $tcBorders->xpath("wtop")[0]["wval"];
+            $topSize = $tcBorders->xpath("wtop")[0]["wsz"];
+            $topSpace = $tcBorders->xpath("wtop")[0]["wspace"];
+            $topColor = $tcBorders->xpath("wtop")[0]["wcolor"];
+
+            $borders['top']['val'] = (is_object($topVal)) ? (string)$topVal : "";
+            $borders['top']['size'] = (is_object($topSize)) ? (string)round($topSize / 4) : "";
+            $borders['top']['space'] = (is_object($topSpace)) ? (string)$topSpace : "";
+            $borders['top']['color'] = (is_object($topColor)) ? (string)$topColor : "";
+            if ($borders['top']['color'] == "auto") $borders['top']['color'] = "000000";
+
+            $rightVal = $tcBorders->xpath("wright")[0]["wval"];
+            $rightSize = $tcBorders->xpath("wright")[0]["wsz"];
+            $rightSpace = $tcBorders->xpath("wright")[0]["wspace"];
+            $rightColor = $tcBorders->xpath("wright")[0]["wcolor"];
+
+            $borders['right']['val'] = (is_object($rightVal)) ? (string)$rightVal : "";
+            $borders['right']['size'] = (is_object($rightSize)) ? (string)round($rightSize / 4) : "";
+            $borders['right']['space'] = (is_object($rightSpace)) ? (string)$rightSpace : "";
+            $borders['right']['color'] = (is_object($rightColor)) ? (string)$rightColor : "";
+            if ($borders['right']['color'] == "auto") $borders['right']['color'] = "000000";
+
+            $leftVal = $tcBorders->xpath("wleft")[0]["wval"];
+            $leftSize = $tcBorders->xpath("wleft")[0]["wsz"];
+            $leftSpace = $tcBorders->xpath("wleft")[0]["wspace"];
+            $leftColor = $tcBorders->xpath("wleft")[0]["wcolor"];
+
+            $borders['left']['val'] = (is_object($leftVal)) ? (string)$leftVal : "";
+            $borders['left']['size'] = (is_object($leftSize)) ? (string)round($leftSize / 4) : "";
+            $borders['left']['space'] = (is_object($leftSpace)) ? (string)$leftSpace : "";
+            $borders['left']['color'] = (is_object($leftColor)) ? (string)$leftColor : "";
+            if ($borders['left']['color'] == "auto") $borders['left']['color'] = "000000";
         }
 
         return $borders;
