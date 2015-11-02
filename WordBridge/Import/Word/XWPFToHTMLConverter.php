@@ -451,22 +451,23 @@ class XWPFToHTMLConverter {
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
 
-                $stylesheet = $this->mainStyleSheet;
-//              var_dump(get_class($stylesheet));
+//                $stylesheet = $this->mainStyleSheet;
+////              var_dump(get_class($stylesheet));
+////
+//                $xwpfTable =  new XWPFTable($element, $key, $stylesheet);
+//                $stdTable = $xwpfTable->parseTable();
 //
-                $xwpfTable =  new XWPFTable($element, $key, $stylesheet);
-                $stdTable = $xwpfTable->parseTable();
+//                //Add element to container
+//                $container->addInnerElement($stdTable);
 
-                //Add element to container
-                $container->addInnerElement($stdTable);
-//                // Get table out of element
-//                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
-//
-//                // Parse table
-//                $tableElement = $this->parseTable($tableHead, $key);
-//
-//                //Add table to the
-//                $container->addInnerElement($tableElement);
+                // Get table out of element
+                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
+
+                // Parse table
+                $tableElement = $this->parseTable($tableHead, $key);
+
+                //Add table to the
+                $container->addInnerElement($tableElement);
             }
 
             // Check if element is a paragraph
