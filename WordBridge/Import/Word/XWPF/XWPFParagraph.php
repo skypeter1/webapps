@@ -12,6 +12,7 @@ class XWPFParagraph
 {
     private $paragraph;
     private $mainStyleSheet;
+    private $id;
 
     function __construct($paragraph, $mainStyleSheet)
     {
@@ -21,7 +22,12 @@ class XWPFParagraph
         $this->mainStyleSheet = $mainStyleSheet;
     }
 
-    public function getRuns()
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    private function getRuns()
     {
         $runs = java_values($this->paragraph->getRuns());
         return $runs;
@@ -71,7 +77,7 @@ class XWPFParagraph
         }
     }
 
-    public function processParagraphStyle()
+    private function processParagraphStyle()
     {
         $paragraphStyle = new StyleClass();
         $lineSpacing = $this->getLineSpacing();
@@ -118,7 +124,7 @@ class XWPFParagraph
         $paragraphContainer->setClass('textframe horizontal common_style1 ' . $className);
 
         // Add id attribute to container for this paragraph
-        //$paragraphContainer->setAttribute('id', 'div_' . $parIterator);
+        if(isset($this->id)) $paragraphContainer->setAttribute('id', 'div_' . $this->id);
 
         return $paragraphContainer;
     }

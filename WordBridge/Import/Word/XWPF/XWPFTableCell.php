@@ -183,6 +183,14 @@ class XWPFTableCell
         return $colspan;
     }
 
+    private function getRowspan()
+    {
+        $cellXML = $this->getXMLCellObject();
+        $wvmerge = $cellXML->xpath('*/wvMerge');
+        $rowspan = ($wvmerge) ?((string)$wvmerge[0]['wval']) : "";
+        return $rowspan;
+    }
+
 
     public function processTableCellStyle()
     {
@@ -192,12 +200,11 @@ class XWPFTableCell
         if(!empty($cell_width)) $cellClass->setAttribute('width', $cell_width['value'] . 'px');
 
         $color = $this->getColor();
-        if(!is_null($color)) {
-            //if($color == 'auto') $color = "000000";
-            $cellClass->setAttribute("background-color", "#" . "$color");
-        }
+        if(!is_null($color)) $cellClass->setAttribute("background-color", "#" . "$color");
 
-        $borders = $this->getBorderProperties();
+        $xml = $this->getCTTc();
+        //var_dump($xml);
+        //$borders = $this->getBorderProperties();
         //$cellClass->setAttribute('border-bottom', $borders['bottom']['size']);
 
         return $cellClass;
@@ -218,6 +225,10 @@ class XWPFTableCell
         //Set Attributes
         $colspan = $this->getColspan();
         if(!empty($colspan)) $cellContainer->setAttribute('colspan', $colspan);
+
+        //TODO Find values for rowspan
+//        $rowspan = $this->getRowspan();
+//        if($rowspan == "restart") $cellContainer->setAttribute('rowspan', 2);
 
         return $cellContainer;
     }

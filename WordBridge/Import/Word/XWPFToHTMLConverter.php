@@ -14,6 +14,9 @@ include_once "StyleSheet.php";
 include_once "XhtmlEntityConverter.php";
 include_once "XWPF/XWPFTable.php";
 include_once "XWPF/XWPFSDTCell.php";
+include_once "XWPF/XWPFList.php";
+include_once "XWPF/XWPFParagraph.php";
+
 
 
 /**
@@ -451,23 +454,23 @@ class XWPFToHTMLConverter {
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
 
-//                $stylesheet = $this->mainStyleSheet;
-////              var_dump(get_class($stylesheet));
-////
-//                $xwpfTable =  new XWPFTable($element, $key, $stylesheet);
-//                $stdTable = $xwpfTable->parseTable();
+                $stylesheet = $this->mainStyleSheet;
+//              var_dump(get_class($stylesheet));
 //
-//                //Add element to container
-//                $container->addInnerElement($stdTable);
+                $xwpfTable =  new XWPFTable($element, $key, $stylesheet);
+                $stdTable = $xwpfTable->parseTable();
 
-                // Get table out of element
-                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
+                //Add element to container
+                $container->addInnerElement($stdTable);
 
-                // Parse table
-                $tableElement = $this->parseTable($tableHead, $key);
-
-                //Add table to the
-                $container->addInnerElement($tableElement);
+//                // Get table out of element
+//                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
+//
+//                // Parse table
+//                $tableElement = $this->parseTable($tableHead, $key);
+//
+//                //Add table to the
+//                $container->addInnerElement($tableElement);
             }
 
             // Check if element is a paragraph
@@ -475,6 +478,8 @@ class XWPFToHTMLConverter {
 
                 // Get paragraph out of element
                 $paragraph = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFParagraph');
+
+                //$beforeProcess = $this->inspectParagraph($paragraph, $container ,$key);
 
                 if($this->checkLastRenderedPage($paragraph)){
                     //echo "page:".$this->pageCounter."<br/>";
@@ -494,84 +499,19 @@ class XWPFToHTMLConverter {
                     // Parse paragraph
                     $paragraphHTMLElement = $this->parseParagraph($paragraph, $key);
 
+//                    $XWPFparagraph = new XWPFParagraph($paragraph, $this->mainStyleSheet);
+//                    $XWPFparagraph->setId($key);
+//                    $paragraphHTMLElement = $XWPFparagraph->parseParagraph();
+
+                    //var_dump($parContainer);
+
                     if(is_object($paragraphHTMLElement)){
                         $paragraphHTMLElement->setId($key);
                     }else{
                        // var_dump($paragraphHTMLElement);
                     }
+                    $container = $this->processContainer($paragraphHTMLElement, $container, $key);
 
-                    // Check if this is a page break
-                    if (is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::PAGE_BREAK) {
-
-//                        $sectionNew = new HTMLElement(HTMLElement::DIV);
-//                        $sectionArray = array();
-//
-//                        $counter = 0;
-//                        $contentMarkup = array();
-
-//                        foreach ($container->getInnerElements() as $key=>$element){
-//
-////                            echo "<tr style='border:1px solid black'>";
-////                            echo "<td style='border: 1px solid black'>".$element->getId()."</td>";
-////                            echo "<td style='border: 1px solid black'>".java_values($element->getInnerText())."</td>";
-////                            echo "</tr>";
-//                            $contentMarkup[$element->getId()] = $element;
-//
-//                            $atributos = $element->getAttributes();
-//
-//                            if(array_key_exists('data',$atributos)){
-//                                $this->contador = $element->getId();
-//                                //echo $counter."-";
-//                                $sectionArray[$counter] = $element->getId();
-//                                $counter++;
-//                            }else {
-//                                //$sectionNew->addInnerElement($element);
-//                            }
-//                        }
-//
-//                        foreach($sectionArray as $key=>$section){
-//                            $next = $key+1;
-//                            $articuloNew = new HTMLElement(HTMLElement::ARTICLE);
-//                            for($i=$section;$i<$sectionArray[$next];$i++){
-//                                $articuloNew->addInnerElement($contentMarkup[$i]);
-//                            }
-//                            $sectionNew->addInnerElement($articuloNew);
-//                        }
-                        // Add container to inner body
-                        $this->htmlDocument->setBody($container);
-                        //$this->htmlDocument->setBody($sectionNew);
-
-                        // Create new page
-                        $this->createPage();
-
-                        // Create new HTML element and set its class name
-                        $container = new HTMLElement(HTMLElement::DIV);
-                        $styleClass = new StyleClass();
-                        $className = $this->mainStyleSheet->getClassName($styleClass);
-                        $container->setClass($className);
-
-                    } elseif(is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::CUSTOMLIST) {
-
-                    $this->setCustomList($container, $key);
-
-                    }elseif($paragraphHTMLElement->getTagName() == "tr" ){
-
-                        //Add Toc to the container
-                        if($this->tocLevel <= 1) {
-                            $table = new HTMLElement(HTMLElement::TABLE);
-                            $table->addInnerElement($paragraphHTMLElement);
-                            $container->addInnerElement($table);
-                        }else {
-                            $lastTable = $container->getLastElement();
-                            if(is_object($lastTable)){
-                                $lastTable->addInnerElement($paragraphHTMLElement);
-                            }
-                        }
-                    }else {
-                        $container->setId($key);
-                        // Add element to container
-                        $container->addInnerElement($paragraphHTMLElement);
-                    }
 
                 }
 
@@ -582,6 +522,21 @@ class XWPFToHTMLConverter {
 
         // Add container to inner body
         $this->htmlDocument->setBody($container);
+
+    }
+
+    private function inspectParagraph($paragraph, $container, $key)
+    {
+        $numberingInfo = $this->paragraphExtractNumbering($paragraph);
+
+        if ($numberingInfo) {
+            $xwpfList = new XWPFList($paragraph, $this->mainStyleSheet);
+            $xwpfList->processList($numberingInfo , $container , $paragraph , $key, $this->listNumId, $this->listLevelState);
+
+            //Assign new list level state and num id
+            $this->listLevelState = $numberingInfo['lvl'];
+            $this->listNumId = $numberingInfo['numId'];
+        }
 
     }
 
@@ -639,16 +594,7 @@ class XWPFToHTMLConverter {
             // Get XML out of XML style
             $tmpStyleXML = str_replace('w:', 'w', $styleXML);
             $xml = new SimpleXMLElement($tmpStyleXML);
-            
-            // Get cell margins
-//            $cellTopMargin = $xml->xpath('wtblPr/wtblCellMar/wtop');
-//            $cellTopMargin = round(intval($cellTopMargin[0]['ww']) / 15.1);
-//            $cellLeftMargin = $xml->xpath('wtblPr/wtblCellMar/wleft');
-//            $cellLeftMargin = round(intval($cellLeftMargin[0]['ww']) / 15.1);
-//            $cellRightMargin = $xml->xpath('wtblPr/wtblCellMar/wright');
-//            $cellRightMargin = round(intval($cellRightMargin[0]['ww']) / 15.1);
-//            $cellBottomMargin = $xml->xpath('wtblPr/wtblCellMar/wbottom');
-//            $cellBottomMargin = round(intval($cellBottomMargin[0]['ww']) / 15.1);
+
         }
 
         //$styleXML = java_values($style->getCTStyle()->toString());
@@ -1162,29 +1108,20 @@ class XWPFToHTMLConverter {
 
             // Get style class
             $style = $this->styles->getStyle($paragraph->getStyleID());
-
             $styleXML = java_values($style->getCTStyle()->toString());
-
-            //var_dump($styleXML);
 
             //Process style
             $sectionContainer = null;
 
             //Check section numbering
             if (strpos($styleXML, '<w:ilvl') !== false) {
-                //var_dump($styleXML);
                 $sectionContainer = $this->processSectionNumberingToc($styleXML,$paragraph);
-                //$container->setAttribute('data', 'section');
-
-                //var_dump($container);
             }
 
             //Check if paragraph has custom style list
             if (strpos($styleXML, '<w:numId') !== false and strpos($styleXML, 'w:customStyle="1"') !== false and !$numberingInfo ) {
-
                 //Parse Custom List
                $this->parseCustomStyleList($paragraph, $styleXML);
-
                 return self::CUSTOMLIST;
             }
 
@@ -1920,26 +1857,7 @@ class XWPFToHTMLConverter {
             }
         }
     }
-    
-    /**
-     * @depricated
-     * Parses additional information of doc file like, title, keywords, author e.g.
-     */
-    private function parseAdditionalInformation()
-    {
-        /*
-        // Retreive summary information object to work with
-        $summaryInformation = $this->document->getSummaryInformation();
 
-        if (java_values($summaryInformation) == null) return;
-
-        // Get document title
-        $title = java_values($summaryInformation->getTitle());
-
-        // TODO: add author and keywords
-        $this->htmlDocument->setTitle($title);
-        */
-    }
 
     /**
      * Get HTMLDocument
@@ -2035,6 +1953,11 @@ class XWPFToHTMLConverter {
         //Assign new list level state and num id
         $this->listLevelState = $numberingInfo['lvl'];
         $this->listNumId = $numberingInfo['numId'];
+
+//        echo $this->listLevelState;
+//        echo "-------------------";
+//        echo $this->listNumId;
+//        echo "<br/>";
 
         // Parse list item
         $listItemHTMLElement = $this->parseList($paragraph);
@@ -2208,6 +2131,59 @@ class XWPFToHTMLConverter {
         }
 
         return $container;
+    }
+
+    /**
+     * @param $paragraphHTMLElement
+     * @param $container
+     * @param $key
+     * @return HTMLElement
+     */
+    private function processContainer($paragraphHTMLElement, $container, $key)
+    {
+// Check if this is a page break
+        if (is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::PAGE_BREAK) {
+
+            $this->htmlDocument->setBody($container);
+            //$this->htmlDocument->setBody($sectionNew);
+
+            // Create new page
+            $this->createPage();
+
+            // Create new HTML element and set its class name
+            $container = new HTMLElement(HTMLElement::DIV);
+            $styleClass = new StyleClass();
+            $className = $this->mainStyleSheet->getClassName($styleClass);
+            $container->setClass($className);
+            return $container;
+
+        } elseif (is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::CUSTOMLIST) {
+
+            $this->setCustomList($container, $key);
+            return $container;
+
+        } elseif ($paragraphHTMLElement->getTagName() == "tr") {
+
+            //Add Toc to the container
+            if ($this->tocLevel <= 1) {
+                $table = new HTMLElement(HTMLElement::TABLE);
+                $table->addInnerElement($paragraphHTMLElement);
+                $container->addInnerElement($table);
+                return $container;
+            } else {
+                $lastTable = $container->getLastElement();
+                if (is_object($lastTable)) {
+                    $lastTable->addInnerElement($paragraphHTMLElement);
+                    return $container;
+                }
+                return $container;
+            }
+        } else {
+            $container->setId($key);
+            // Add element to container
+            $container->addInnerElement($paragraphHTMLElement);
+            return $container;
+        }
     }
 
 }

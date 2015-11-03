@@ -143,9 +143,13 @@ class XWPFTable
                     if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFSDTCell'))) {
                         $rowXml = java_values($row->getCtRow()->ToString());
                         $xwpfSdtCell = new XWPFSDTCell($cell, $rowXml);
+                        $xwpfSdtCell->setMainStyleSheet($this->mainStyleSheet);
                         $container = $xwpfSdtCell->parseSDTCell();
                     }
                 }
+
+                //Set default size
+                $container->setAttribute('style','width : 100%');
                 $container->addInnerElement($rowContainer);
             }
             return $container;
@@ -168,7 +172,6 @@ class XWPFTable
             $xwpfStyle = new XWPFStyle($style);
             $tableStyleClass = $xwpfStyle->processStyle();
             $tableStyleClass->setAttribute("border-collapse", "inherit");
-            $tableStyleClass->setAttribute("width", "100%");
             $tableStyles['table'] = $tableStyleClass;
 
             $tableCellStyleClass = $xwpfStyle->processTableCellStyle();
