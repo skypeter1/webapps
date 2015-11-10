@@ -47,8 +47,8 @@ class XWPFStyle
             case 'table':
                 $styleClass = $this->processTableStyle();
                 break;
-//            default:
-//                $styleClass = new StyleClass();
+            default:
+                $styleClass = new StyleClass();
         }
         return $styleClass;
     }

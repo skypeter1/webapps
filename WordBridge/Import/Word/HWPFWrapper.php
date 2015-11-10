@@ -235,7 +235,6 @@ class HWPFWrapper {
      * @param $type
      * @param $listSymbol
      * @return string
-     * @internal param type $string
      */
     public static function getListType($type ,$listSymbol){
 
