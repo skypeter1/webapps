@@ -137,6 +137,9 @@ class XWPFTable
                             $className = $this->mainStyleSheet->getClassName($cellStyleClass);
                             $cellContainer->setClass($className);
                         }
+
+                        //Set default border
+                        $cellContainer->setAttribute('style','border:1px black solid');
                         $rowContainer->addInnerElement($cellContainer);
                     }
 
