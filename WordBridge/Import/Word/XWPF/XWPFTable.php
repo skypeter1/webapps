@@ -18,7 +18,6 @@ class XWPFTable
     private $mainStyleSheet;
     private $element;
 
-
     /**
      * @param $element
      * @param $key
@@ -93,9 +92,21 @@ class XWPFTable
         return $rows;
     }
 
+    /**
+     * @return mixed
+     */
     public function getDocumentStyles(){
         $styles = java_values($this->javaTable->getBody()->getXWPFDocument()->getStyles());
         return $styles;
+    }
+
+    /**
+     * @param $number
+     * @return string
+     */
+    private function checkOddOrEvenNumber($number){
+        $type = ($number % 2 == 0) ? "even" : "odd";
+        return $type;
     }
 
     /**
@@ -116,30 +127,19 @@ class XWPFTable
             }
 
             $rows = $this->getRows();
+            $numberOfRows = count($rows) - 1;
 
-            foreach ($rows as $key => $row) {
+            foreach ($rows as $rowNumber => $row) {
 
+                $conditionalTableRowStyleClass = $this->processConditionalFormat($rowNumber, $styleClass, $numberOfRows);
                 $rowContainer = new HTMLElement(HTMLElement::TR);
                 $xwpfRow = new XWPFTableRow($row);
                 $cells = $xwpfRow->getTableICells();
 
-                foreach ($cells as $cell) {
+                foreach ($cells as $cellNumber => $cell) {
 
                     if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))) {
-                        $xwpfCell = new XWPFTableCell($cell,$this->mainStyleSheet);
-                        $cellContainer = $xwpfCell->parseTableCell();
-                        $tableCellStyle = $xwpfCell->processTableCellStyle();
-                        $cellStyles = (!empty($styleClass)) ? $styleClass['cell'] : $styleClass;
-
-                        //Set cell style class
-                        if(isset($this->mainStyleSheet) and is_a($this->mainStyleSheet,'StyleSheet')){
-                            $cellStyleClass = $tableCellStyle->mergeStyleClass($cellStyles);
-                            $className = $this->mainStyleSheet->getClassName($cellStyleClass);
-                            $cellContainer->setClass($className);
-                        }
-
-                        //Set default border
-                        $cellContainer->setAttribute('style','border:1px black solid');
+                        $cellContainer = $this->processXWPFTableCell($cell, $styleClass, $conditionalTableRowStyleClass);
                         $rowContainer->addInnerElement($cellContainer);
                     }
 
@@ -162,6 +162,9 @@ class XWPFTable
         }
     }
 
+    /**
+     * @return array
+     */
     public function processTableStyles()
     {
         $tableStyles = array();
@@ -174,14 +177,117 @@ class XWPFTable
 
             $xwpfStyle = new XWPFStyle($style);
             $tableStyleClass = $xwpfStyle->processStyle();
-            $tableStyleClass->setAttribute("border-collapse", "inherit");
+            $tableStyleClass->setAttribute("border-collapse", "collapse");
             $tableStyles['table'] = $tableStyleClass;
 
             $tableCellStyleClass = $xwpfStyle->processTableCellStyle();
             $tableStyles['cell'] = $tableCellStyleClass;
+
+            $tableCellConditionalFormat = $xwpfStyle->extractConditionalFormat();
+            if(!empty($tableCellConditionalFormat)){
+                $tableStyles['conditionalFormat'] = $tableCellConditionalFormat;
+            }
+        }else {
+            $tableStyleClass = new StyleClass();
+            $tableStyleClass->setAttribute("border-collapse", "collapse");
+            $tableStyles['table'] = $tableStyleClass;
         }
 
         return $tableStyles;
+    }
+
+    /**
+     * @param $format
+     * @return StyleClass
+     * @internal param $borders
+     * @internal param $conditionalTableCellStyleClass
+     * @internal param $backgroundColor
+     */
+    private function applyConditionalFormatStyles($format)
+    {
+        $conditionalTableCellStyleClass = new StyleClass();
+
+        // Get internal values
+        $borders = $format["borders"];
+        $backgroundColor = $format["backgroundColor"];
+
+        // Apply first row styles
+        if (!empty($borders) && is_array($borders)) {
+            $conditionalCellBorders = array('bottom', 'top', 'right', 'left');
+            foreach ($borders as $key => $border) {
+                if (in_array($key, $conditionalCellBorders)) {
+                    $conditionalTableCellStyleClass->setAttribute("border-" . $key,
+                        $border['size'] . "px " . HWPFWrapper::getBorder($border['val']) . " #" . $border['color']);
+                }
+            }
+        }
+        if (strlen($backgroundColor)) {
+            $conditionalTableCellStyleClass->setAttribute("background-color", '#' . $backgroundColor);
+        }
+
+        return $conditionalTableCellStyleClass;
+    }
+
+    /**
+     * @param $rowNumber
+     * @param $styleClass
+     * @param $numberOfRows
+     * @return StyleClass
+     */
+    private function processConditionalFormat($rowNumber, $styleClass, $numberOfRows)
+    {
+        $conditionalTableRowStyleClass = new StyleClass();
+        $typeOfRowNumber = $this->checkOddOrEvenNumber($rowNumber);
+
+        //Check for conditional formatting
+        if (array_key_exists('conditionalFormat', $styleClass)) {
+            $conditionalFormatForRows = $styleClass['conditionalFormat'];
+
+            foreach ($conditionalFormatForRows as $rowFormat) {
+                $typeOfRowFormat = $rowFormat["type"];
+                if (($typeOfRowNumber == "even") && $typeOfRowFormat == "band2Horz") {
+                    $conditionalTableRowStyleClass = $this->applyConditionalFormatStyles($rowFormat);
+                } elseif (($typeOfRowNumber == "odd") && $typeOfRowFormat == "band1Horz") {
+                    $conditionalTableRowStyleClass = $this->applyConditionalFormatStyles($rowFormat);
+                } elseif (($rowNumber == 0) && $typeOfRowFormat == "firstRow") {
+                    $conditionalTableRowStyleClass = $this->applyConditionalFormatStyles($rowFormat);
+                } elseif (($rowNumber == $numberOfRows) && $typeOfRowFormat == "lastRow") {
+                    $conditionalTableRowStyleClass = $this->applyConditionalFormatStyles($rowFormat);
+                }
+            }
+        }
+
+        return $conditionalTableRowStyleClass;
+    }
+
+    /**
+     * @param $cell
+     * @param $styleClass
+     * @param $conditionalTableRowStyleClass
+     * @return HTMLElement
+     */
+    private function processXWPFTableCell($cell, $styleClass, $conditionalTableRowStyleClass)
+    {
+        $xwpfCell = new XWPFTableCell($cell, $this->mainStyleSheet);
+        $cellContainer = $xwpfCell->parseTableCell();
+        $tableCellStyle = $xwpfCell->processTableCellStyle();
+        $cellStyles = (array_key_exists('cell', $styleClass)) ? $styleClass['cell'] : array();
+
+        if (isset($this->mainStyleSheet) and is_a($this->mainStyleSheet, 'StyleSheet')) {
+
+            //Merge standard cell borders
+            $cellStyleClass = (!empty($cellStyles)) ? $tableCellStyle->mergeStyleClass($cellStyles) : $tableCellStyle;
+
+            //Set conditional format to cells of the current row if is set
+            if (isset($conditionalTableRowStyleClass) && $conditionalTableRowStyleClass->hasAttributes()) {
+                $cellStyleClass = $cellStyleClass->mergeStyleClass($conditionalTableRowStyleClass);
+            }
+
+            $className = $this->mainStyleSheet->getClassName($cellStyleClass);
+            $cellContainer->setClass($className);
+            return $cellContainer;
+        }
+        return $cellContainer;
     }
 
 }

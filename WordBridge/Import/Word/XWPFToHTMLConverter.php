@@ -4,8 +4,8 @@ ini_set('xdebug.var_display_max_depth', 15);
 ini_set('xdebug.var_display_max_children', 5256);
 ini_set('xdebug.var_display_max_data', 157784);
 ini_set('max_execution_time', 600);
-//App::import('Vendor', 'Chaucer/Common/ProgressUpdater');
-//set_time_limit (60);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 include_once "HTMLDocument.php";
 include_once "HTMLElement.php";
@@ -144,6 +144,7 @@ class XWPFToHTMLConverter
      */
     private $headlineElements;
     private $headlineId;
+    private $headLineList;
 
     /**
      * Sections
@@ -158,6 +159,7 @@ class XWPFToHTMLConverter
      */
     private $localJava;
     private $headlineIdSection;
+    public static $imagesPath;
 
     /**
      *
@@ -178,6 +180,8 @@ class XWPFToHTMLConverter
 
         // Store temp path and progress tracker per instance
         $this->_tmp_path = $tmp_path;
+        self::$imagesPath = $tmp_path;
+
         $this->_progress = $progress;
 
         // Start progress
@@ -220,6 +224,10 @@ class XWPFToHTMLConverter
         //$this->_progress->incrementStep();
     }
 
+    public static function getDirectoryPath(){
+        return self::$imagesPath;
+    }
+
     public function getMainStyleSheet()
     {
         return $this->mainStyleSheet;
@@ -259,6 +267,7 @@ class XWPFToHTMLConverter
         $this->headlineId = 0;
         $this->tableOfContents = array();
         $this->headlineIdSection = -1;
+        $this->headLineList = array();
 
         //Load document and update progress
         $this->document = $this->loadDocx($docx_file);
@@ -296,6 +305,14 @@ class XWPFToHTMLConverter
         }
 
         $document = new Java("org.apache.poi.xwpf.usermodel.XWPFDocument", $input);
+        //var_dump(java_values($document->getDocument()->toString()));
+        //var_dump(java_values($document->getDocument()->getBody()->getSectPr()->getPgSz()->getW()->doubleValue()->toString()));
+        $pageSize = java_values($document->getDocument()->getBody()->getSectPr()->getPgSz());
+        $pageHeight = java_values($pageSize->getH()->doubleValue()->toString());
+        $pageWidht =  java_values($pageSize->getW()->doubleValue()->toString());
+//        var_dump((int) $pageHeight / 20);
+//        var_dump((int) $pageWidht / 20);
+
 
         if (is_null($document)) {
             throw new Exception('[XWPFToHTMLConverter::loadDocx] POI XWPFDocument Internal Error');
@@ -369,55 +386,57 @@ class XWPFToHTMLConverter
         $this->htmlDocument = $document;
     }
 
-    /**
-     * @param $header
-     *
-     * @return HTMLElement
-     */
-    private function processHeaderFooter($header)
-    {
-
-        //Set current processed part
-        $this->currentProcessedPart = "HEADER";
-
-        //Create header container
-        $headerContainer = new HTMLElement(HTMLElement::DIV);
-
-        //Read header body elements
-        $headerElements = java_values($header->getBodyElements());
-
-        foreach ($headerElements as $keyHead => $headerElement) {
-
-            // Check if element is a table
-            if (java_instanceof($headerElement, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
-
-                // Get table out of element
-                $tableHead = java_cast($headerElement, 'org.apache.poi.xwpf.usermodel.XWPFTable');
-
-                // Parse table
-                $tableElement = $this->parseTable($tableHead, $keyHead);
-
-                //Add table to the
-                $headerContainer->addInnerElement($tableElement);
-            }
-
-            //Check if element is a paragraph
-            if (java_instanceof($headerElement, java('org.apache.poi.xwpf.usermodel.XWPFParagraph'))) {
-
-                // Get paragraph out of element
-                $paragraph = java_cast($headerElement, 'org.apache.poi.xwpf.usermodel.XWPFParagraph');
-
-                // Parse paragraph
-                $paragraphHTMLElementHeader = $this->parseParagraph($paragraph, $keyHead);
-
-                //Add paragraph to the container
-                $headerContainer->addInnerElement($paragraphHTMLElementHeader);
-            }
-        }
-
-        return $headerContainer;
-
-    }
+//    /**
+//     * @param $header
+//     *
+//     * @return HTMLElement
+//     */
+//    private function processHeaderFooter($header)
+//    {
+//
+//        //Set current processed part
+//        $this->currentProcessedPart = "HEADER";
+//
+//        //Create header container
+//        $headerContainer = new HTMLElement(HTMLElement::DIV);
+//
+//        //Read header body elements
+//        $headerElements = java_values($header->getBodyElements());
+//
+//        foreach ($headerElements as $keyHead => $headerElement) {
+//
+//            // Check if element is a table
+//            if (java_instanceof($headerElement, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
+//
+//                // Get table out of element
+//                $tableHead = java_cast($headerElement, 'org.apache.poi.xwpf.usermodel.XWPFTable');
+//
+//
+//
+//                // Parse table
+//                $tableElement = $this->parseTable($tableHead, $keyHead);
+//
+//                //Add table to the
+//                $headerContainer->addInnerElement($tableElement);
+//            }
+//
+//            //Check if element is a paragraph
+//            if (java_instanceof($headerElement, java('org.apache.poi.xwpf.usermodel.XWPFParagraph'))) {
+//
+//                // Get paragraph out of element
+//                $paragraph = java_cast($headerElement, 'org.apache.poi.xwpf.usermodel.XWPFParagraph');
+//
+//                // Parse paragraph
+//                $paragraphHTMLElementHeader = $this->parseParagraph($paragraph, $keyHead);
+//
+//                //Add paragraph to the container
+//                $headerContainer->addInnerElement($paragraphHTMLElementHeader);
+//            }
+//        }
+//
+//        return $headerContainer;
+//
+//    }
 
     /**
      * Collect the header and footer objects for the current document
@@ -475,22 +494,19 @@ class XWPFToHTMLConverter
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
 
-//                $stylesheet = $this->mainStyleSheet;
-//                $xwpfTable = new XWPFTable($element, $key, $stylesheet);
-//                $stdTable = $xwpfTable->parseTable();
-//
-//                //Add element to container
-//                $container->addInnerElement($stdTable);
-
-
-                // Get table out of element
-                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
-
-                // Parse table
-                $tableElement = $this->parseTable($tableHead, $key);
-
-                //Add table to the
+                $table = new XWPFTable($element,$key,$this->mainStyleSheet);
+                $tableElement = $table->parseTable();
                 $container->addInnerElement($tableElement);
+
+//                // Get table out of element
+//                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
+//
+//                // Parse table
+//                $tableElement = $this->parseTable($tableHead, $key);
+//
+//                //Add table to the
+//                $container->addInnerElement($tableElement);
+
             }
 
             // Check if element is a paragraph
@@ -607,9 +623,6 @@ class XWPFToHTMLConverter
         $container = new HTMLElement(HTMLElement::SPAN);
         $container->setInnerText($sectionString);
 
-//        $container = new HTMLElement(HTMLElement::SECTION);
-//        $container->addInnerElement($numberingContainer);
-
         return $container;
     }
 
@@ -634,9 +647,11 @@ class XWPFToHTMLConverter
 
             //Compare the current bookmark to the one in toc numbering
             if (array_key_exists($mark, $this->tocNumbering)) {
+
                 //Add the container to the paragraph
                 $sectionContainer = new HTMLElement(HTMLElement::SPAN);
                 $sectionText = $this->tocNumbering[$mark];
+                //var_dump($sectionText);
                 $this->grandNumbering = $sectionText;
                 $this->firstLevel = 0;
                 $this->secondLevel = 0;
@@ -1024,12 +1039,9 @@ class XWPFToHTMLConverter
             $style = $this->styles->getStyle($paragraph->getStyleID());
             $styleXML = java_values($style->getCTStyle()->toString());
 
-            //Process style
-            $sectionContainer = null;
-
             //Check section numbering
             if (strpos($styleXML, '<w:ilvl') !== false) {
-                $sectionContainer = $this->processSectionNumberingToc($styleXML, $paragraph);
+                $sectionContainer = $this->processSectionNumberingToc($styleXML);
             }
 
             //Check if paragraph has custom style list
@@ -1047,25 +1059,6 @@ class XWPFToHTMLConverter
 
                 //Create headline container
                 $container = $this->selectHeadlineContainer($styleName);
-
-                //Add section numbering if exists
-                if (is_object($sectionContainer)) {
-
-                    //$articleNumber
-                    //$container->addInnerElement($sectionContainer);
-//                    $runsP = java_values($paragraph->getRuns());
-//                    foreach ($runsP as $run) {
-//                        var_dump(java_values($run->getText(0)));
-//                    }
-
-//                    $articleContainer =  new HTMLElement(HTMLElement::ARTICLE);
-//                    $this->auxArticleContainer = $articleContainer;
-//                    echo $sectionContainer->getInnerText();
-//                    echo "-----------------";
-//                    echo $this->articleNumber++;
-//                    echo "<br/>";
-
-                }
             }
 
             //Process paragraph style
@@ -1096,6 +1089,7 @@ class XWPFToHTMLConverter
 
         // Get xml of this paragraph
         $paragraph_xml = java_values($paragraph->getCTP()->toString());
+        //var_dump($paragraph_xml);
 
         //Check for book mark links to TOC
         if (strpos($paragraph_xml, '<w:bookmarkStart') !== false) {
@@ -1112,18 +1106,9 @@ class XWPFToHTMLConverter
             return $tocContainer;
         }
 
-//        // Check for page break
-//        if (strpos($paragraph_xml, '<w:br w:type="page"/>') !== false) {
-//
-//            // This is a page break
-//            return self::PAGE_BREAK;
-//        }
-
         $this->setLineSpace($paragraph, $styleClass);
-
-        $prevCharRunHTMLElement = null;
         // Iterate through paragraph characters
-        $this->parseRuns($charRuns, $container, $prevCharRunHTMLElement);
+        $this->parseRuns($charRuns, $container);
 
         // Get alignment
         $alignment = java_values($paragraph->getAlignment()->getValue());
@@ -1141,20 +1126,12 @@ class XWPFToHTMLConverter
 
         // Wrap inside header tag if is a headlines
         if (in_array($container->getTagName(), $this->headlineElements)) {
-
-//            if($container->getTagName() == "h1"){
-//                $innerElements = $container->getInnerElements();
-//                foreach($innerElements as $inner){
-//                    var_dump(trim($inner->getInnerText()));
-//                }
-//            }
-
             $headline = $container;
             $container = new HTMLElement(HTMLElement::HEADER);
             $exists = $styleClass->attributeExists('font-size');
-            if (!$exists) $styleClass->setAttribute("font-size", 'medium');
-            if (is_object($sectionContainer)) $container->setAttribute('data', 'article');
-
+            if (!$exists) {
+                $styleClass->setAttribute("font-size", 'medium');
+            }
             $container->addInnerElement($headline);
         }
 
@@ -1315,30 +1292,7 @@ class XWPFToHTMLConverter
         $charXml = java_values($characterRun->getCTR()->ToString());
 
         //Check for section numbering
-        if (strpos($charXml, '<w:instrText xml:space="preserve">PAGEREF') !== false) {
-
-            //Trim the xml REF
-            $start = strpos($charXml, '_Toc');
-            $end = strpos($charXml, '\h');
-            $lenght = $end - $start;
-
-            $tocRef = trim(substr($charXml, $start, $lenght));
-
-            //Calculate index value
-            $textParagraph = java_values($characterRun->getParagraph()->getText());
-            $indexValue = str_split(substr($textParagraph, 0, 3));
-            $value = '';
-            foreach ($indexValue as $char) {
-                if (is_numeric($char) and !empty($char)) {
-                    $value .= $char;
-                }
-            }
-
-            if (!$value == "") {
-                $this->tocNumbering[$tocRef] = $value;
-            }
-
-        }
+        $this->checkSectionNumbering($characterRun, $charXml);
 
         $charXml = str_replace('w:', 'w', $charXml);
         $xml = new SimpleXMLElement($charXml);
@@ -1722,39 +1676,6 @@ class XWPFToHTMLConverter
     }
 
     /**
-     * Collect all the document drawing properties
-     * @param   object  Paragraph
-     */
-    private function collectDrawingProperties($paragraph)
-    {
-        // Prepare XML
-        $xml = java_values($paragraph->getCTP()->toString());
-        $xml = str_replace('w:', 'w', $xml);
-        $xml = str_replace('wp:', 'wp', $xml);
-        $xml = new SimpleXMLElement($xml);
-
-        // Get object data
-        $obj = $xml->xpath("wr/wdrawing/wpinline/wpdocPr");
-
-        // Check if there are any properties
-        if (count($obj) > 0) {
-
-            // Loop through images for this paragraph
-            foreach ($obj as $key => $imageData) {
-
-                // Add to images data (append '' so it converts to string)
-                $this->images_data[count($this->images_data)] = array(
-                    'id' => $imageData[0]['id'] . '',
-                    'name' => $imageData[0]['name'] . '',
-                    'title' => (isset($imageData[0]['title'])) ? $imageData[0]['title'] . '' : '',
-                    'descr' => (isset($imageData[0]['descr'])) ? $imageData[0]['descr'] . '' : ''
-                );
-            }
-        }
-    }
-
-
-    /**
      * Get HTMLDocument
      * @return  HTMLDocument
      */
@@ -1959,7 +1880,9 @@ class XWPFToHTMLConverter
 
         for ($i = 0; $i < count($runs); $i++) {
             $character = $runs[$i];
-            $runHTMLElement = $this->parseCharacterRun($character);
+            $run = new XWPFRun($character, $this->mainStyleSheet);
+            $runHTMLElement = $run->parseRun();
+            //$runHTMLElement = $this->parseCharacterRun($character);
             $tocRow[$i] = $runHTMLElement;
         }
 
@@ -1989,9 +1912,6 @@ class XWPFToHTMLConverter
             if ($valid == false) {
                 if (is_a($tocRow[$i], 'HTMLElement')) {
                     if (!empty(trim($tocRow[$i]->getInnerText()))) {
-                        $needles = array('<strong >','</strong>');
-                        $text = trim(str_replace($needles,"",$tocRow[$i]->getInnerText()));
-                        if(!empty($text)) $this->tableOfContents = $text;
                         $toc_link->addInnerElement($tocRow[$i]);
                     }
                 }
@@ -2014,6 +1934,19 @@ class XWPFToHTMLConverter
         $toc_cell->addInnerElement($toc_link);
         $toc_cell->addInnerElement($tocPage);
 
+        //Get table of contents
+        $needles = array('<strong >','</strong>');
+        $textList = $toc_link->getLastElement();
+
+        if(is_a($textList, 'HTMLElement')) {
+            $text = trim(str_replace($needles, "", $textList->getInnerText() ));
+        } else {
+            $text = trim(str_replace($needles, "", $textList));
+        }
+        $textNum = trim(str_replace($needles,"",$tocNum->getInnerText()));
+        $textPage = trim(str_replace($needles,"",$tocPage->getInnerText()));
+        $this->tableOfContents[] = array('num' => $textNum, 'description' => $text, 'page' => $textPage);
+
         //Add cell to toc row
         $toc_row->addInnerElement($toc_cell);
 
@@ -2032,6 +1965,10 @@ class XWPFToHTMLConverter
 
     public function getTableOfContents(){
         return $this->tableOfContents;
+    }
+
+    public function getHeadLineList(){
+        return $this->headLineList;
     }
 
     private function printBreakPage($container){
@@ -2092,23 +2029,26 @@ class XWPFToHTMLConverter
                     $lastTable->addInnerElement($paragraphHTMLElement);
                 }
             }
-        }
-
-        elseif ($paragraphHTMLElement->getTagName() == "header") {
+        } elseif ($paragraphHTMLElement->getTagName() == "header") {
 
             $headline = $paragraphHTMLElement->getLastElement();
-            if(is_object($headline)){
+            if (is_object($headline)) {
                 $tagHeadline = $headline->getTagName();
-                    if($tagHeadline == "h1"){
-                        if(!is_null($headline->getInnerText())){
-                            $headline->setAttribute('id', "toc" . $this->headlineIdSection);
-                            $this->headlineIdSection++;
-                            $container = $this->pageBreak($container);
-                        }
+                if (!is_int($headline->getInnerText())) {
+                    $this->headLineList[] = array(
+                        'tag' => $tagHeadline,
+                        'content' => trim($headline->getLastElement()->getInnerText())
+                    );
+                }
+                if ($tagHeadline == "h1") {
+                    if (!is_null($headline->getInnerText())) {
+                        $headline->setAttribute('id', "toc" . $this->headlineIdSection);
+                        $this->headlineIdSection++;
+                        $container = $this->pageBreak($container);
                     }
+                }
             }
             $container->addInnerElement($paragraphHTMLElement);
-
         } else {
             $container->addInnerElement($paragraphHTMLElement);
         }
@@ -2150,17 +2090,16 @@ class XWPFToHTMLConverter
     /**
      * @param $charRuns
      * @param $container
-     * @param $prevCharRunHTMLElement
      */
-    private function parseRuns($charRuns, $container, $prevCharRunHTMLElement)
+    private function parseRuns($charRuns, $container)
     {
+        $prevCharRunHTMLElement = null;
         for ($j = 0; $j < count($charRuns); $j++) {
-
-            // Character run is a simple part of text (of paragraph), every character or word of
-            // character run shares the same style properties within entire character run.
             $characterRun = $charRuns[$j];
             $pictures = java_values($characterRun->getEmbeddedPictures());
-            $charRunHTMLElement = $this->parseCharacterRun($characterRun);
+            //$charRunHTMLElement = $this->parseCharacterRun($characterRun);
+            $run = new XWPFRun($characterRun, $this->mainStyleSheet);
+            $charRunHTMLElement = $run->parseRun();
 
             // Check if this is a picture
             if (count($pictures) > 0) {
@@ -2181,6 +2120,35 @@ class XWPFToHTMLConverter
                 $prevCharRunHTMLElement = clone $charRunHTMLElement;
             }
 
+        }
+    }
+
+    /**
+     * @param $characterRun
+     * @param $charXml
+     */
+    private function checkSectionNumbering($characterRun, $charXml)
+    {
+        if (strpos($charXml, '<w:instrText xml:space="preserve">PAGEREF') !== false) {
+
+            //Trim the xml REF
+            $start = strpos($charXml, '_Toc');
+            $end = strpos($charXml, '\h');
+            $lenght = $end - $start;
+
+            $tocRef = trim(substr($charXml, $start, $lenght));
+
+            //Calculate index value
+            $textParagraph = java_values($characterRun->getParagraph()->getText());
+            $indexValue = str_split(substr($textParagraph, 0, 3));
+            $value = '';
+            foreach ($indexValue as $char) {
+                if (is_numeric($char) and !empty($char) or $char == ".") $value .= $char;
+            }
+
+            if (!$value == "") {
+                $this->tocNumbering[$tocRef] = $value;
+            }
         }
     }
 

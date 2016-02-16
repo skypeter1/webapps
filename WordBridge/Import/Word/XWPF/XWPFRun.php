@@ -1,5 +1,6 @@
 <?php
 
+include_once "XWPFPicture.php";
 /**
  * Created by Peter.
  * User: root
@@ -11,6 +12,10 @@ class XWPFRun
     private $run;
     private $mainStyleSheet;
 
+    /**
+     * @param $run
+     * @param $mainStyleSheet
+     */
     function __construct($run, $mainStyleSheet)
     {
         if (java_instanceof($run, java('org.apache.poi.xwpf.usermodel.XWPFRun'))) {
@@ -19,45 +24,108 @@ class XWPFRun
         $this->mainStyleSheet = $mainStyleSheet;
     }
 
+    /**
+     * @return SimpleXMLElement
+     */
+    private function getXMLRun()
+    {
+        $charXml = java_values($this->run->getCTR()->ToString());
+        $charXml = str_replace('w:', 'w', $charXml);
+        $runXml = new SimpleXMLElement($charXml);
+
+        return $runXml;
+    }
+
+
+    /**
+     * @return HTMLElement
+     */
+    private function selectSubscriptContainer()
+    {
+        $subValue = $this->getSubscript();
+        switch ($subValue) {
+            case 2:
+                $container = new HTMLElement(HTMLElement::SUP);
+                break;
+            case 3:
+                $container = new HTMLElement(HTMLElement::SUB);
+                break;
+            default :
+                $container = new HTMLElement(HTMLElement::SPAN);
+                break;
+        }
+        return $container;
+    }
+
+    /**
+     * Retrieve the vertical align value
+     * baseline = 1 , superscript = 2, subscript = 3
+     * @return mixed
+     */
+    private function getSubscript(){
+        $subValue = java_values($this->run->getSubscript()->getValue());
+        return $subValue;
+    }
+
+    /**
+     * @return string
+     */
     public function getText()
     {
-        $text = java_values($this->run->getText(0));
+        $text = nl2br(java_values($this->run->getText(0)));
         $runText = XhtmlEntityConverter::convertToNumericalEntities(htmlentities($text, ENT_COMPAT | ENT_XHTML));
         return $runText;
     }
 
+    /**
+     * @return HTMLElement
+     */
     public function parseRun()
     {
-        $runContainer = new HTMLElement(HTMLElement::SPAN);
+        // Get and process pictures if there are any
+        $pictures = java_values($this->run->getEmbeddedPictures());
+        if (count($pictures) > 0) {
+            foreach ($pictures as $key => $picture) {
+                $path = XWPFToHTMLConverter::getDirectoryPath();
+                $pictureContainer = new XWPFPicture($picture, $this->mainStyleSheet, $path);
+                $container = $pictureContainer->processPicture();
+                return $container;
+            }
+        }
+
+        // Character parser
+        $runContainer = ($this->getSubscript() != 1) ? $this->selectSubscriptContainer() : new HTMLElement(HTMLElement::SPAN);
         $text = $this->getText();
+        $addNewLine = (strlen($text) == 1 && (substr($text, -1, 1) == "\r" || ord(substr($text, -1, 1)) == HWPFWrapper::BEL_MARK)) ? true : false;
+        if ($addNewLine) {
+            $text .= '<br />';
+        }
         $runStyle = $this->processRunStyle($this->run);
         $runContainer->setInnerText($text);
         $runContainer->setClass($runStyle);
+
         return $runContainer;
     }
 
+    /**
+     * @param $run
+     * @return mixed
+     */
     private function processRunStyle($run)
     {
-        //Get Run xml
-        $charXml = java_values($run->getCTR()->ToString());
-        $charXml = str_replace('w:', 'w', $charXml);
-        $xml = new SimpleXMLElement($charXml);
+        $xml = $this->getXMLRun();
 
         // Get color
         $color = java_values($run->getColor());
-        if (is_null($color)) {
-            $color = 'black';
-        } else {
-            $color = '#' . $color;
-        }
+        $color = (is_null($color)) ? 'black' : '#' . $color;
 
         //Get background highlight color
         $runCharShadows = $xml->xpath("wrPr/wshd");
-        if (!empty($runCharShadows)) {
-            $backgroundColor = $runCharShadows[0]['wfill'];
-        } else {
-            $backgroundColor = null;
-        }
+        $backgroundColor = (!empty($runCharShadows)) ? $runCharShadows[0]['wfill'] : null;
+
+        // Get StrikeThrough
+        $runStrike =  $xml->xpath("wrPr/wstrike");
+        $isStrikeThrough = (!empty($runStrike)) ? true : false;
 
         // Get style
         $isItalic = java_values($run->isItalic());
@@ -92,6 +160,7 @@ class XWPFRun
             $styleFont = HWPFWrapper::getFontFamily($fontFamily);
             $styleClass->setAttribute("font-family", $styleFont);
         }
+        if($isStrikeThrough) $styleClass->setAttribute("text-decoration", "line-through");
 
         $className = $this->mainStyleSheet->getClassName($styleClass);
 

@@ -92,6 +92,15 @@ class StyleClass
     }
 
     /**
+     * @return bool
+     */
+    public function hasAttributes()
+    {
+        $hasAttributes = (count($this->attributes) > 0) ? true : false;
+        return $hasAttributes;
+    }
+
+    /**
      * @param $key
      * @return bool
      */
@@ -153,16 +162,19 @@ class StyleClass
         if (is_a($styleToMerge, 'StyleClass')) {
             $mergedStyle = new StyleClass();
             $attributes = $this->getAttributes();
-            foreach ($attributes as $key => $attribute) {
-                $mergedStyle->setAttribute($key, $attribute);
-            }
-            $mergeAttributes = $styleToMerge->getAttributes();
-            foreach ($mergeAttributes as $merge_key => $mergeAttribute) {
-                if(!$this->attributeExists($merge_key)) {
-                    $mergedStyle->setAttribute($merge_key, $mergeAttribute);
+            if (count($attributes) > 0) {
+                foreach ($attributes as $key => $attribute) {
+                    $mergedStyle->setAttribute($key, $attribute);
                 }
             }
-
+            $mergeAttributes = $styleToMerge->getAttributes();
+            if(!is_null($mergeAttributes)) {
+                foreach ($mergeAttributes as $merge_key => $mergeAttribute) {
+                    if (!$this->attributeExists($merge_key)) {
+                        $mergedStyle->setAttribute($merge_key, $mergeAttribute);
+                    }
+                }
+            }
         } else {
             $mergedStyle = new StyleClass();
         }

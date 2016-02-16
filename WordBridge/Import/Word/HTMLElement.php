@@ -31,6 +31,8 @@ class HTMLElement{
     const SEC = "sec";
     const SELECT = "select";
     const OPTION = "option";
+    const SUB = "sub";
+    const SUP = "sup";
 
     private $tagName;
     private $id;
@@ -203,7 +205,7 @@ class HTMLElement{
      */
     public function getInnerText()
     {
-        return ($this->innerElements[0]) ? @$this->innerElements[0]->getHTML() : 0;
+            return ($this->innerElements[0]) ? @$this->innerElements[0]->getHTML() : 0;
     }
     
     /**
