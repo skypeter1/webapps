@@ -3,7 +3,7 @@
 
 <web-app>
 
-    <!-- the following 8 lines extend the servlet spec 2.2 "url-pattern" to handle PHP PATH_INFO: *.php/something?what=that. Remove them, if you don't need this feature. -->
+    <!-- the following 8 lines extend the servlet spec 2.2 "url-pattern" to handle PHP PATH_INFO: *test.php/something?what=that. Remove them, if you don't need this feature. -->
     <filter>
         <filter-name>PhpCGIFilter</filter-name>
         <filter-class>php.java.servlet.PhpCGIFilter</filter-class>

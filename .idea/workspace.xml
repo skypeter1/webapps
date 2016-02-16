@@ -1,7 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="6b569a8a-982b-4da1-8ea5-02c213a4a012" name="Default" comment="" />
+    <list default="true" id="6b569a8a-982b-4da1-8ea5-02c213a4a012" name="Default" comment="release 1.0">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFPicture.php" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/WordBridge/WEB-INF/lib/poi-3.9-20121203.jar" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/WordBridge/WEB-INF/lib/poi-ooxml-3.9-20121203.jar" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/WordBridge/WEB-INF/lib/poi-ooxml-schemas-3.9-20121203.jar" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/WordBridge/WEB-INF/lib/poi-scratchpad-3.9-20121203.jar" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/WordBridge/WEB-INF/lib/xmlbeans-2.3.0.jar" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/Word/StyleClass.php" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/StyleClass.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFParagraph.php" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFParagraph.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFRun.php" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFRun.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFStyle.php" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFStyle.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTable.php" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTable.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTableCell.php" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTableCell.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php" afterPath="$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/index.php" afterPath="$PROJECT_DIR$/WordBridge/Import/index.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/php.xml" afterPath="$PROJECT_DIR$/.idea/php.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/test.php" afterPath="$PROJECT_DIR$/WordBridge/test.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/Import/test.php" afterPath="$PROJECT_DIR$/WordBridge/Import/test.php" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/WordBridge/WEB-INF/web.xml" afterPath="$PROJECT_DIR$/WordBridge/WEB-INF/web.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    </list>
+    <list id="a709d53b-634b-453e-ab50-2ccad6f987c4" name="New changelist" comment="" />
+    <list id="dccad90d-c3c1-4bb1-9900-6309e5fb932b" name="Rejected commit: Default" comment="release 1.0" />
     <ignored path="webapps.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/dataSources.local.xml" />
@@ -13,8 +36,18 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="ChangesViewManager" flattened_view="true" show_ignored="false" />
+  <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/webapps$HTMLElementTest_testGetHTML.coverage" NAME="HTMLElementTest.testGetHTML Coverage Results" MODIFIED="1442439566205" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="PhpCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/webapps$StyleClassTest_testMergeClass.coverage" NAME="StyleClassTest.testMergeClass Coverage Results" MODIFIED="1445880043889" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="PhpCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+  </component>
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
+  </component>
+  <component name="DatabaseView">
+    <option name="FLATTEN" value="false" />
+    <option name="GROUP_BY_TYPE" value="true" />
+    <option name="SORT_CHILDREN" value="false" />
+    <option name="SHOW_TABLE_CONSTRAINTS" value="true" />
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FavoritesManager">
@@ -22,87 +55,69 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="index.php" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/WordBridge/Import/index.php">
+      <file leaf-file-name="XWPFTableCell.php" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTableCell.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="17" column="55" selection-start-line="17" selection-start-column="55" selection-end-line="17" selection-end-column="55" />
+            <state vertical-scroll-proportion="-5.2222223">
+              <caret line="250" column="46" selection-start-line="250" selection-start-column="46" selection-end-line="250" selection-end-column="46" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="XWPFToHTMLConverter.php" pinned="false" current-in-tab="true">
+      <file leaf-file-name="XWPFParagraph.php" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFParagraph.php">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="-13.888889">
+              <caret line="124" column="16" selection-start-line="124" selection-start-column="16" selection-end-line="124" selection-end-column="16" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="StyleClass.php" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/StyleClass.php">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="161" column="48" selection-start-line="161" selection-start-column="48" selection-end-line="161" selection-end-column="48" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="XWPFStyle.php" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFStyle.php">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0">
+              <caret line="156" column="9" selection-start-line="156" selection-start-column="9" selection-end-line="156" selection-end-column="9" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="XWPFToHTMLConverter.php" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.21745351">
-              <caret line="331" column="25" selection-start-line="331" selection-start-column="25" selection-end-line="331" selection-end-column="25" />
+            <state vertical-scroll-proportion="-0.0">
+              <caret line="179" column="0" selection-start-line="179" selection-start-column="0" selection-end-line="179" selection-end-column="0" />
               <folding>
-                <element signature="e#10718#10893#0#PHP" expanded="false" />
-                <element signature="n#parseTable#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-                <element signature="e#22755#22929#0#PHP" expanded="false" />
-                <element signature="n#processTableStyle#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-                <element signature="e#27809#27969#0#PHP" expanded="false" />
+                <element signature="e#15440#15532#0#PHP" expanded="false" />
+                <element signature="e#39892#40027#0#PHP" expanded="false" />
+                <element signature="e#40172#40188#0#PHP" expanded="false" />
+                <element signature="e#40424#40440#0#PHP" expanded="false" />
+                <element signature="e#40993#41118#0#PHP" expanded="false" />
+                <element signature="e#56378#56442#0#PHP" expanded="false" />
+                <element signature="e#56692#56752#0#PHP" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="HTMLDocument.php" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HTMLDocument.php">
+      <file leaf-file-name="XWPFRun.php" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFRun.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="index.php" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/WordBridge/index.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="XhtmlEntityConverter.php" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XhtmlEntityConverter.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="phpdocx_demo_conversionplugin.php" pinned="false" current-in-tab="false">
-        <entry file="file:///home/peter/Downloads/phpdocx_demo_conversionplugin.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="52" column="41" selection-start-line="52" selection-start-column="41" selection-end-line="52" selection-end-column="41" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="HWPFWrapper.php" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HWPFWrapper.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="230" column="28" selection-start-line="230" selection-start-column="28" selection-end-line="230" selection-end-column="28" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="php.ini" pinned="false" current-in-tab="false">
-        <entry file="file:///etc/php5/cgi/php.ini">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1930" selection-end-column="0" />
+            <state vertical-scroll-proportion="-11.333333">
+              <caret line="96" column="126" selection-start-line="95" selection-start-column="8" selection-end-line="96" selection-end-column="126" />
               <folding />
             </state>
           </provider>
@@ -111,18 +126,42 @@
       <file leaf-file-name="HTMLElement.php" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="166" column="36" selection-start-line="166" selection-start-column="20" selection-end-line="166" selection-end-column="36" />
+            <state vertical-scroll-proportion="-18.666666">
+              <caret line="43" column="30" selection-start-line="43" selection-start-column="30" selection-end-line="43" selection-end-column="30" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Java.inc" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/WordBridge/java/Java.inc">
+      <file leaf-file-name="XWPFTable.php" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTable.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="1490" column="48" selection-start-line="1490" selection-start-column="48" selection-end-line="1490" selection-end-column="48" />
+            <state vertical-scroll-proportion="-12.555555">
+              <caret line="278" column="86" selection-start-line="278" selection-start-column="71" selection-end-line="278" selection-end-column="86" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="index.php" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/WordBridge/Import/index.php">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.7167382">
+              <caret line="33" column="0" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
+              <folding>
+                <element signature="e#1073#1103#0#PHP" expanded="false" />
+                <element signature="e#1284#1317#0#PHP" expanded="false" />
+                <marker date="1455636610804" expanded="true" signature="3843:3908" placeholder="..." />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="test.php" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WordBridge/Import/test.php">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="-19.333334">
+              <caret line="58" column="24" selection-start-line="58" selection-start-column="24" selection-end-line="58" selection-end-column="24" />
               <folding />
             </state>
           </provider>
@@ -137,12 +176,34 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/WordBridge/WEB-INF/web.xml" />
-        <option value="/etc/php5/cli/php.ini" />
         <option value="/etc/php5/cgi/php.ini" />
         <option value="$PROJECT_DIR$/WordBridge/java/Java.inc" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/StyleSheet.php" />
+        <option value="/etc/php5/cli/php.ini" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/composer.json" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/HWPFToHTMLConverter.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/Tests/HTMLElementTest.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/tests/XWPFTableTest.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTableRow.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/STDCellDropDownList.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverterTest.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/Tests/XWPFTableTest.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/Tests/StyleClassTest.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFSDTCell.php" />
         <option value="$PROJECT_DIR$/WordBridge/Import/Word/HWPFWrapper.php" />
-        <option value="$PROJECT_DIR$/WordBridge/Import/index.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFList.php" />
+        <option value="$PROJECT_DIR$/WordBridge/test.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFPicture.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFStyle.php" />
         <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/StyleClass.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTableCell.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTable.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/index.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/test.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFParagraph.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFRun.php" />
       </list>
     </option>
   </component>
@@ -157,6 +218,7 @@
     <option name="filePaths">
       <list>
         <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php" />
+        <option value="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTable.php" />
       </list>
     </option>
   </component>
@@ -218,6 +280,8 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scratches" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -292,25 +356,65 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
-      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="/home/peter/Downloads/phpdocx_demo_conversionplugin.php" />
+    <property name="last_opened_file_path" value="/home/peter/workspace" />
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="recentsLimit" value="5" />
     <property name="restartRequiresConfirmation" value="true" />
     <property name="FullScreen" value="false" />
-    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+    <property name="settings.editor.selected.configurable" value="reference.webide.settings.project.settings.php.phpunit" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="WebServerToolWindowPanel.toolwindow.show.size" value="false" />
     <property name="WebServerToolWindowPanel.toolwindow.show.date" value="false" />
     <property name="WebServerToolWindowPanel.toolwindow.show.permissions" value="false" />
     <property name="WebServerToolWindowPanel.toolwindow.highlight.symlinks" value="true" />
     <property name="WebServerToolWindowPanel.toolwindow.highlight.mappings" value="true" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth0" value="145" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder0" value="0" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth1" value="154" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder1" value="1" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth2" value="160" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder2" value="2" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatWidth3" value="1069" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_flatOrder3" value="3" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth0" value="145" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder0" value="0" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth1" value="154" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder1" value="1" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth2" value="160" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder2" value="2" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeWidth3" value="1069" />
+    <property name="FileHistory.git4idea.history.GitHistoryProvider_treeOrder3" value="3" />
   </component>
-  <component name="RunManager" selected="PHP Remote Debug.tomcat">
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/WordBridge/Import/Word/Tests" />
+      <recent name="$PROJECT_DIR$/WordBridge/Import/Word/XWPF/tests" />
+    </key>
+  </component>
+  <component name="RunManager" selected="PHPUnit.HTMLElementTest.testGetInnerElementsByTag">
+    <configuration default="false" name="XWPFTableTest" type="PHPUnitRunConfigurationType" factoryName="PHPUnit" temporary="true">
+      <TestRunner class="XWPFTableTest" file="$PROJECT_DIR$/WordBridge/Import/Word/Tests/XWPFTableTest.php" scope="Class" />
+      <method />
+    </configuration>
+    <configuration default="false" name="StyleClassTest.testMergeClass" type="PHPUnitRunConfigurationType" factoryName="PHPUnit" temporary="true">
+      <TestRunner class="StyleClassTest" file="$PROJECT_DIR$/WordBridge/Import/Word/Tests/StyleClassTest.php" method="testMergeClass" scope="Method" />
+      <method />
+    </configuration>
+    <configuration default="false" name="StyleClassTest" type="PHPUnitRunConfigurationType" factoryName="PHPUnit" temporary="true">
+      <TestRunner class="StyleClassTest" file="$PROJECT_DIR$/WordBridge/Import/Word/Tests/StyleClassTest.php" scope="Class" />
+      <method />
+    </configuration>
+    <configuration default="false" name="HTMLElementTest.testGetInnerElementsByTag" type="PHPUnitRunConfigurationType" factoryName="PHPUnit" temporary="true">
+      <TestRunner class="HTMLElementTest" file="$PROJECT_DIR$/WordBridge/Import/Word/Tests/HTMLElementTest.php" method="testGetInnerElementsByTag" scope="Method" />
+      <method />
+    </configuration>
+    <configuration default="false" name="XWPFTableTest.testNewXWPFTable" type="PHPUnitRunConfigurationType" factoryName="PHPUnit" temporary="true">
+      <TestRunner class="XWPFTableTest" file="$PROJECT_DIR$/WordBridge/Import/Word/Tests/XWPFTableTest.php" method="testNewXWPFTable" scope="Method" />
+      <method />
+    </configuration>
     <configuration default="true" type="JavascriptDebugType" factoryName="JavaScript Debug">
       <method />
     </configuration>
@@ -340,12 +444,26 @@
       <envs />
       <method />
     </configuration>
-    <configuration default="false" name="tomcat" type="PhpRemoteDebugRunConfigurationType" factoryName="PHP Remote Debug" server_name="processor.local.vm" session_id="PHPSTORM">
+    <configuration default="false" name="tomcat" type="PhpRemoteDebugRunConfigurationType" factoryName="PHP Remote Debug" server_name="localhost" session_id="PHPSTORM">
       <method />
     </configuration>
-    <list size="1">
+    <list size="6">
       <item index="0" class="java.lang.String" itemvalue="PHP Remote Debug.tomcat" />
+      <item index="1" class="java.lang.String" itemvalue="PHPUnit.XWPFTableTest" />
+      <item index="2" class="java.lang.String" itemvalue="PHPUnit.StyleClassTest.testMergeClass" />
+      <item index="3" class="java.lang.String" itemvalue="PHPUnit.StyleClassTest" />
+      <item index="4" class="java.lang.String" itemvalue="PHPUnit.HTMLElementTest.testGetInnerElementsByTag" />
+      <item index="5" class="java.lang.String" itemvalue="PHPUnit.XWPFTableTest.testNewXWPFTable" />
     </list>
+    <recent_temporary>
+      <list size="5">
+        <item index="0" class="java.lang.String" itemvalue="PHPUnit.HTMLElementTest.testGetInnerElementsByTag" />
+        <item index="1" class="java.lang.String" itemvalue="PHPUnit.StyleClassTest.testMergeClass" />
+        <item index="2" class="java.lang.String" itemvalue="PHPUnit.XWPFTableTest.testNewXWPFTable" />
+        <item index="3" class="java.lang.String" itemvalue="PHPUnit.StyleClassTest" />
+        <item index="4" class="java.lang.String" itemvalue="PHPUnit.XWPFTableTest" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="ShelveChangesManager" show_recycled="false" />
   <component name="SvnConfiguration">
@@ -354,10 +472,18 @@
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="6b569a8a-982b-4da1-8ea5-02c213a4a012" name="Default" comment="" />
+      <changelist id="a709d53b-634b-453e-ab50-2ccad6f987c4" name="New changelist" comment="" />
       <created>1438008902602</created>
       <option name="number" value="Default" />
       <updated>1438008902602</updated>
     </task>
+    <task id="LOCAL-00001" summary="release 1.0">
+      <created>1439350139749</created>
+      <option name="number" value="00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1439350139749</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TodoView">
@@ -375,24 +501,51 @@
     <layout>
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.49743262" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32969153" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32969153" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.14717224" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32969153" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17159383" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5025674" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.34661356" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.34661356" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32934928" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Coverage" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.22464699" sideWeight="0.5" order="4" side_tool="true" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3997344" sideWeight="0.49743262" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40239045" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Command Line Tools Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
     </layout>
+    <layout-to-restore>
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32969153" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Remote Host" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32969153" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.34661356" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5025674" order="8" side_tool="true" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Coverage" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.22493573" sideWeight="0.5" order="4" side_tool="true" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.49743262" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.12532134" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.40239045" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3997344" sideWeight="0.49743262" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Command Line Tools Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32934928" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
+    </layout-to-restore>
   </component>
   <component name="Vcs.Log.UiProperties">
     <option name="RECENTLY_FILTERED_USER_GROUPS">
@@ -405,218 +558,59 @@
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="release 1.0" />
+    <option name="LAST_COMMIT_MESSAGE" value="release 1.0" />
+    <option name="REFORMAT_BEFORE_PROJECT_COMMIT" value="true" />
+    <option name="REARRANGE_BEFORE_PROJECT_COMMIT" value="true" />
+  </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="php">
           <url>file://$PROJECT_DIR$/WordBridge/Import/index.php</url>
-          <line>29</line>
+          <line>42</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="php">
           <url>file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php</url>
-          <line>695</line>
+          <line>1019</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="php">
+          <url>file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php</url>
+          <line>514</line>
+          <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="php">
+          <url>file://$PROJECT_DIR$/WordBridge/Import/test.php</url>
+          <option name="timeStamp" value="16" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="php">
+          <url>file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php</url>
+          <line>1061</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="php">
+          <url>file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php</url>
+          <line>181</line>
+          <option name="timeStamp" value="24" />
+        </line-breakpoint>
       </breakpoints>
-      <option name="time" value="12" />
+      <option name="time" value="25" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file:///etc/php5/cli/php.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1935" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///etc/php5/cgi/php.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1930" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/java/Java.inc">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1490" column="48" selection-start-line="1490" selection-start-column="48" selection-end-line="1490" selection-end-column="48" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/index.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="14" column="9" selection-start-line="14" selection-start-column="9" selection-end-line="14" selection-end-column="9" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/WEB-INF/weblogic.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="6" column="19" selection-start-line="6" selection-start-column="19" selection-end-line="6" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#10718#10893#0#PHP" expanded="false" />
-            <element signature="n#parseTable#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-            <element signature="e#22755#22929#0#PHP" expanded="false" />
-            <element signature="n#processTableStyle#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-            <element signature="e#27809#27969#0#PHP" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HWPFWrapper.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="221" column="40" selection-start-line="221" selection-start-column="40" selection-end-line="221" selection-end-column="40" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///etc/php5/cli/php.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1935" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///etc/php5/cgi/php.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1930" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/java/Java.inc">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1490" column="48" selection-start-line="1490" selection-start-column="48" selection-end-line="1490" selection-end-column="48" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/index.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="17" column="49" selection-start-line="17" selection-start-column="49" selection-end-line="17" selection-end-column="49" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/META-INF/MANIFEST.MF">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/WEB-INF/weblogic.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="6" column="19" selection-start-line="6" selection-start-column="19" selection-end-line="6" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/WEB-INF/web.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="32" column="0" selection-start-line="32" selection-start-column="0" selection-end-line="32" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#10718#10893#0#PHP" expanded="false" />
-            <element signature="n#parseTable#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-            <element signature="e#22755#22929#0#PHP" expanded="false" />
-            <element signature="n#processTableStyle#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-            <element signature="e#27809#27969#0#PHP" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HWPFWrapper.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="221" column="40" selection-start-line="221" selection-start-column="40" selection-end-line="221" selection-end-column="40" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///etc/php5/cli/php.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1935" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///etc/php5/cgi/php.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1930" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/java/Java.inc">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1591" column="20" selection-start-line="1591" selection-start-column="9" selection-end-line="1591" selection-end-column="20" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/WordProcessor.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="86" column="36" selection-start-line="86" selection-start-column="36" selection-end-line="86" selection-end-column="36" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/WordBridge/Import/index.php">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="17" column="55" selection-start-line="17" selection-start-column="55" selection-end-line="17" selection-end-column="55" />
-          <folding />
+          <folding>
+            <element signature="e#1073#1103#0#PHP" expanded="false" />
+            <element signature="e#1284#1317#0#PHP" expanded="false" />
+            <marker date="1455636610804" expanded="true" signature="3843:3908" placeholder="..." />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -646,11 +640,13 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#10718#10893#0#PHP" expanded="false" />
-            <element signature="n#parseTable#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-            <element signature="e#22755#22929#0#PHP" expanded="false" />
-            <element signature="n#processTableStyle#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-            <element signature="e#27809#27969#0#PHP" expanded="false" />
+            <element signature="e#15440#15532#0#PHP" expanded="false" />
+            <element signature="e#39892#40027#0#PHP" expanded="false" />
+            <element signature="e#40172#40188#0#PHP" expanded="false" />
+            <element signature="e#40424#40440#0#PHP" expanded="false" />
+            <element signature="e#40993#41118#0#PHP" expanded="false" />
+            <element signature="e#56378#56442#0#PHP" expanded="false" />
+            <element signature="e#56692#56752#0#PHP" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -659,7 +655,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -667,14 +662,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="1591" column="20" selection-start-line="1591" selection-start-column="9" selection-end-line="1591" selection-end-column="20" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/WordProcessor.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="86" column="36" selection-start-line="86" selection-start-column="36" selection-end-line="86" selection-end-column="36" />
         </state>
       </provider>
     </entry>
@@ -720,25 +707,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/ImportProcessor.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-15.844508">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///etc/php5/cli/php.ini">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1935" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///etc/php5/cgi/php.ini">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="1930" column="0" selection-start-line="1930" selection-start-column="0" selection-end-line="1930" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -756,19 +728,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/java/Java.inc">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="1490" column="48" selection-start-line="1490" selection-start-column="48" selection-end-line="1490" selection-end-column="48" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///home/peter/Downloads/phpdocx_demo_conversionplugin.php">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="52" column="41" selection-start-line="52" selection-start-column="41" selection-end-line="52" selection-end-column="41" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -776,15 +739,132 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php">
+    <entry file="file:///etc/php5/cli/php.ini">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.57419354">
+          <caret line="1935" column="28" selection-start-line="1935" selection-start-column="28" selection-end-line="1935" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HWPFToHTMLConverter.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-0.7488856">
+          <caret line="89" column="50" selection-start-line="89" selection-start-column="50" selection-end-line="89" selection-end-column="50" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/vendor/doctrine/instantiator/tests/DoctrineTest/InstantiatorPerformance/InstantiatorPerformanceEvent.php">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="166" column="36" selection-start-line="166" selection-start-column="20" selection-end-line="166" selection-end-column="36" />
-          <folding />
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/vendor/doctrine/instantiator/tests/DoctrineTest/InstantiatorTest/InstantiatorTest.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-13.333333">
+          <caret line="45" column="46" selection-start-line="45" selection-start-column="34" selection-end-line="45" selection-end-column="46" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/vendor/doctrine/instantiator/src/Doctrine/Instantiator/Instantiator.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="12.0">
+          <caret line="32" column="12" selection-start-line="32" selection-start-column="12" selection-end-line="32" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/composer.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.10300429">
+          <caret line="4" column="1" selection-start-line="4" selection-start-column="1" selection-end-line="4" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/ImportProcessor.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/WordProcessor.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="86" column="36" selection-start-line="86" selection-start-column="36" selection-end-line="86" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/java/Java.inc">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="91" column="16" selection-start-line="91" selection-start-column="9" selection-end-line="91" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverterTest.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.012875536">
+          <caret line="6" column="14" selection-start-line="6" selection-start-column="14" selection-end-line="6" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/StyleSheet.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="60" column="78" selection-start-line="60" selection-start-column="50" selection-end-line="60" selection-end-column="78" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/STDCellDropDownList.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.30472103">
+          <caret line="26" column="5" selection-start-line="26" selection-start-column="5" selection-end-line="26" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/Tests/XWPFTableTest.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/Tests/StyleClassTest.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="23" column="57" selection-start-line="23" selection-start-column="57" selection-end-line="23" selection-end-column="57" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFSDTCell.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="114" column="20" selection-start-line="114" selection-start-column="20" selection-end-line="114" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/Tests/HTMLElementTest.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="55" column="65" selection-start-line="55" selection-start-column="65" selection-end-line="55" selection-end-column="65" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/Tests/HTMLDocumentTest.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="17" column="0" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFList.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="231" column="0" selection-start-line="231" selection-start-column="0" selection-end-line="231" selection-end-column="0" />
         </state>
       </provider>
     </entry>
@@ -792,44 +872,127 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/test.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="24" column="33" selection-start-line="24" selection-start-column="25" selection-end-line="24" selection-end-column="33" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HTMLDocument.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-0.0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state vertical-scroll-proportion="-7.888889">
+          <caret line="93" column="38" selection-start-line="93" selection-start-column="23" selection-end-line="93" selection-end-column="38" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HWPFWrapper.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="230" column="28" selection-start-line="230" selection-start-column="28" selection-end-line="230" selection-end-column="28" />
+        <state vertical-scroll-proportion="-10.666667">
+          <caret line="16" column="36" selection-start-line="16" selection-start-column="36" selection-end-line="16" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFPicture.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-11.888889">
+          <caret line="143" column="63" selection-start-line="143" selection-start-column="63" selection-end-line="143" selection-end-column="63" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/WordBridge/Import/index.php">
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/StyleClass.php">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="17" column="55" selection-start-line="17" selection-start-column="55" selection-end-line="17" selection-end-column="55" />
+          <caret line="161" column="48" selection-start-line="161" selection-start-column="48" selection-end-line="161" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFStyle.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="156" column="9" selection-start-line="156" selection-start-column="9" selection-end-line="156" selection-end-column="9" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTable.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-12.555555">
+          <caret line="278" column="86" selection-start-line="278" selection-start-column="71" selection-end-line="278" selection-end-column="86" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFTableCell.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-5.2222223">
+          <caret line="250" column="46" selection-start-line="250" selection-start-column="46" selection-end-line="250" selection-end-column="46" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/test.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-19.333334">
+          <caret line="58" column="24" selection-start-line="58" selection-start-column="24" selection-end-line="58" selection-end-column="24" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFParagraph.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-13.888889">
+          <caret line="124" column="16" selection-start-line="124" selection-start-column="16" selection-end-line="124" selection-end-column="16" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPFToHTMLConverter.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.21745351">
-          <caret line="331" column="25" selection-start-line="331" selection-start-column="25" selection-end-line="331" selection-end-column="25" />
+        <state vertical-scroll-proportion="0.0">
+          <caret line="179" column="0" selection-start-line="179" selection-start-column="0" selection-end-line="179" selection-end-column="0" />
           <folding>
-            <element signature="e#10718#10893#0#PHP" expanded="false" />
-            <element signature="n#parseTable#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-            <element signature="e#22755#22929#0#PHP" expanded="false" />
-            <element signature="n#processTableStyle#0;n#XWPFToHTMLConverter#0;n#!!top" expanded="false" />
-            <element signature="e#27809#27969#0#PHP" expanded="false" />
+            <element signature="e#15440#15532#0#PHP" expanded="false" />
+            <element signature="e#39892#40027#0#PHP" expanded="false" />
+            <element signature="e#40172#40188#0#PHP" expanded="false" />
+            <element signature="e#40424#40440#0#PHP" expanded="false" />
+            <element signature="e#40993#41118#0#PHP" expanded="false" />
+            <element signature="e#56378#56442#0#PHP" expanded="false" />
+            <element signature="e#56692#56752#0#PHP" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/XWPF/XWPFRun.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-11.333333">
+          <caret line="96" column="126" selection-start-line="95" selection-start-column="8" selection-end-line="96" selection-end-column="126" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/Word/HTMLElement.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-18.666666">
+          <caret line="43" column="30" selection-start-line="43" selection-start-column="30" selection-end-line="43" selection-end-column="30" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WordBridge/Import/index.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.7167382">
+          <caret line="33" column="0" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
+          <folding>
+            <element signature="e#1073#1103#0#PHP" expanded="false" />
+            <element signature="e#1284#1317#0#PHP" expanded="false" />
+            <marker date="1455636610804" expanded="true" signature="3843:3908" placeholder="..." />
           </folding>
         </state>
       </provider>

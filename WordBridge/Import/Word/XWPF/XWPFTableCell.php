@@ -12,6 +12,7 @@ class XWPFTableCell
 {
     private $cell;
     private $mainStyleSheet;
+    private $xmlCell;
 
     function __construct($cell, $mainStyleSheet)
     {
@@ -21,6 +22,7 @@ class XWPFTableCell
             throw new Exception("[XWPFTableCell::new XWPFTableCell] Cell cannot be null");
         }
         $this->mainStyleSheet = $mainStyleSheet;
+        $this->xmlCell = $this->getXMLCellObject();
     }
 
     public function getPart()
@@ -110,53 +112,34 @@ class XWPFTableCell
         return $cellXML;
     }
 
-    public function getBorderProperties()
+    private function getBorderProperties($tcBorders)
     {
         $borders = array();
-        $tcBorders = $this->getXMLCellObject()->xpath("wtcPr/wtcBorders")[0];
-
         if (empty($tcBorders)) {
             $borders = null;
         } else {
-            $bottomVal = $tcBorders->xpath("wbottom")[0]["wval"];
-            $bottomSize = $tcBorders->xpath("wbottom")[0]["wsz"];
-            $bottomSpace = $tcBorders->xpath("wbottom")[0]["wspace"];
-            $bottomColor = $tcBorders->xpath("wbottom")[0]["wcolor"];
+            $borderKeys = array(
+                "bottom" => "wbottom",
+                "top" => "wtop",
+                "right" => "wright",
+                "left" => "wleft",
+                "insideH" => "winsideH",
+                "insideV" => "winsideV"
+            );
+            foreach ($borderKeys as $key => $borderKey) {
+                if (array_key_exists($borderKey, $tcBorders)) {
+                    $val = $tcBorders->xpath($borderKey)[0]["wval"];
+                    $size = $tcBorders->xpath($borderKey)[0]["wsz"];
+                    $space = $tcBorders->xpath($borderKey)[0]["wspace"];
+                    $color = $tcBorders->xpath($borderKey)[0]["wcolor"];
 
-            $borders['bottom']['val'] = (is_object($bottomVal)) ? (string)$bottomVal : "";
-            $borders['bottom']['size'] = (is_object($bottomSize)) ? (string)round($bottomSize / 4) : "";
-            $borders['bottom']['space'] = (is_object($bottomSpace)) ? (string)$bottomSpace : "";
-            $borders['bottom']['color'] = (is_object($bottomColor)) ? (string)$bottomColor : "";
-
-            $topVal = $tcBorders->xpath("wtop")[0]["wval"];
-            $topSize = $tcBorders->xpath("wtop")[0]["wsz"];
-            $topSpace = $tcBorders->xpath("wtop")[0]["wspace"];
-            $topColor = $tcBorders->xpath("wtop")[0]["wcolor"];
-
-            $borders['top']['val'] = (is_object($topVal)) ? (string)$topVal : "";
-            $borders['top']['size'] = (is_object($topSize)) ? (string)$topSize : "";
-            $borders['top']['space'] = (is_object($topSpace)) ? (string)$topSpace : "";
-            $borders['top']['color'] = (is_object($topColor)) ? (string)$topColor : "";
-
-            $rightVal = $tcBorders->xpath("wright")[0]["wval"];
-            $rightSize = $tcBorders->xpath("wright")[0]["wsz"];
-            $rightSpace = $tcBorders->xpath("wright")[0]["wspace"];
-            $rightColor = $tcBorders->xpath("wright")[0]["wcolor"];
-
-            $borders['right']['val'] = (is_object($rightVal)) ? (string)$rightVal : "";
-            $borders['right']['size'] = (is_object($rightSize)) ? (string)$rightSize : "";
-            $borders['right']['space'] = (is_object($rightSpace)) ? (string)$rightSpace : "";
-            $borders['right']['color'] = (is_object($rightColor)) ? (string)$rightColor : "";
-
-            $leftVal = $tcBorders->xpath("wleft")[0]["wval"];
-            $leftSize = $tcBorders->xpath("wleft")[0]["wsz"];
-            $leftSpace = $tcBorders->xpath("wleft")[0]["wspace"];
-            $leftColor = $tcBorders->xpath("wleft")[0]["wcolor"];
-
-            $borders['left']['val'] = (is_object($leftVal)) ? (string)$leftVal : "";
-            $borders['left']['size'] = (is_object($leftSize)) ? (string)$leftSize : "";
-            $borders['left']['space'] = (is_object($leftSpace)) ? (string)$leftSpace : "";
-            $borders['left']['color'] = (is_object($leftColor)) ? (string)$leftColor : "";
+                    $borders[$key]['val'] = (is_object($val)) ? (string)$val : "";
+                    $borders[$key]['size'] = (is_object($size)) ? (string)round($size / 4) : "";
+                    $borders[$key]['space'] = (is_object($space)) ? (string)$space : "";
+                    $borders[$key]['color'] = (is_object($color)) ? (string)$color : "";
+                    if ($borders[$key]['color'] == "auto") $borders[$key]['color'] = "000000";
+                }
+            }
         }
 
         return $borders;
@@ -165,9 +148,8 @@ class XWPFTableCell
     public function getCellWidht()
     {
         $cellWidht = array();
-        $cellXML = $this->getXMLCellObject();
-        $widht = round($cellXML->xpath("wtcPr/wtcW")[0]["ww"] / 15.1);
-        $type = $cellXML->xpath("wtcPr/wtcW")[0]["wtype"];
+        $widht = round($this->xmlCell->xpath("wtcPr/wtcW")[0]["ww"] / 15.1);
+        $type = $this->xmlCell->xpath("wtcPr/wtcW")[0]["wtype"];
         if (!is_null($widht)) $cellWidht['value'] = (int)$widht;
         if (!is_null($type)) $cellWidht['type'] = (string)$type;
 
@@ -176,38 +158,86 @@ class XWPFTableCell
 
     private function getColspan()
     {
-        $cellXML = $this->getXMLCellObject();
-        $gridspan = $cellXML->xpath('*/wgridSpan');
-        $colspan = ($gridspan) ?((string)$gridspan[0]['wval']) : "";
+        $gridspan = $this->xmlCell->xpath('*/wgridSpan');
+        $colspan = ($gridspan) ? ((string)$gridspan[0]['wval']) : "";
 
         return $colspan;
     }
 
     private function getRowspan()
     {
-        $cellXML = $this->getXMLCellObject();
-        $wvmerge = $cellXML->xpath('*/wvMerge');
-        $rowspan = ($wvmerge) ?((string)$wvmerge[0]['wval']) : "";
+        $wvmerge = $this->xmlCell->xpath('*/wvMerge');
+        $rowspan = ($wvmerge) ? ((string)$wvmerge[0]['wval']) : "";
         return $rowspan;
     }
 
 
+    /**
+     * @return StyleClass
+     */
     public function processTableCellStyle()
     {
         $cellClass = new StyleClass();
 
         $cell_width = $this->getCellWidht();
-        if(!empty($cell_width)) $cellClass->setAttribute('width', $cell_width['value'] . 'px');
+        if (!empty($cell_width)) $cellClass->setAttribute('width', $cell_width['value'] . 'px');
 
         $color = $this->getColor();
-        if(!is_null($color)) $cellClass->setAttribute("background-color", "#" . "$color");
+        if (!is_null($color) && $color != "auto") $cellClass->setAttribute("background-color", "#" . "$color");
 
-        $xml = $this->getCTTc();
-        //var_dump($xml);
-        //$borders = $this->getBorderProperties();
-        //$cellClass->setAttribute('border-bottom', $borders['bottom']['size']);
+        $result = $this->getXMLCellObject()->xpath("wtcPr/wtcBorders");
+        $tcBorders = (count($result) > 0) ? $result[0] : array();
+        $cellBorders = $this->getBorderProperties($tcBorders);
+
+        //Assign border styles
+        if (!is_null($cellBorders)) {
+            $tableBorders = array('left', 'right', 'top', 'bottom');
+            foreach ($cellBorders as $key => $border) {
+                if (in_array($key, $tableBorders)) {
+                    $cellClass->setAttribute("border-" . $key,
+                        $border['size'] . "px " . HWPFWrapper::getBorder($border['val']) . " #" . $border['color']);
+                }
+            }
+        }
 
         return $cellClass;
+    }
+
+    /**
+     * @return array
+     */
+    private function getTextOrientationRules()
+    {
+        $wtcPr = $this->getXMLCellObject()->xpath("wtcPr/wtextDirection");
+        $textOrientation = (count($wtcPr) > 0) ? (string)$wtcPr[0]["wval"] : "";
+        switch ($textOrientation) {
+            case 'tbRl':
+                $textOrientationRules = array('transform' => 'rotate(90deg)', 'float' => 'right');
+                break;
+            case 'btLr':
+                $textOrientationRules = array('transform' => 'rotate(270deg)', 'float' => 'left');
+                break;
+            default:
+                $textOrientationRules = array();
+                break;
+        }
+        return $textOrientationRules;
+    }
+
+    /**
+     * @return StyleClass
+     */
+    private function extractParagraphStyles()
+    {
+        $paragraphStyle = new StyleClass();
+        $textOrientation = $this->getTextOrientationRules();
+        if (!empty($textOrientation)) {
+            $paragraphStyle->setAttribute("transform", $textOrientation['transform']);
+            $paragraphStyle->setAttribute("float", $textOrientation['float']);
+            $paragraphStyle->setAttribute("display", "inline-block");
+        }
+
+        return $paragraphStyle;
     }
 
 
@@ -219,12 +249,22 @@ class XWPFTableCell
         foreach ($paragraphs as $javaParagraph) {
             $paragraph = new XWPFParagraph($javaParagraph, $this->mainStyleSheet);
             $paragraphContainer = $paragraph->parseParagraph();
+            $styleClass = $paragraph->processParagraphStyle();
+            $paragraphStyle = $this->extractParagraphStyles();
+
+            // Merge inherited styles
+            if ($paragraphStyle->hasAttributes()) $styleClass = $styleClass->mergeStyleClass($paragraphStyle);
+            $className = $this->mainStyleSheet->getClassName($styleClass);
+            $paragraphContainer->setClass('textframe horizontal common_style1 ' . $className);
+
+            // Add id attribute to container for this paragraph
+            if (!empty($paragraph->getId())) $paragraphContainer->setAttribute('id', 'div_' . $paragraph->getId());
             $cellContainer->addInnerElement($paragraphContainer);
         }
 
         //Set Attributes
         $colspan = $this->getColspan();
-        if(!empty($colspan)) $cellContainer->setAttribute('colspan', $colspan);
+        if (!empty($colspan)) $cellContainer->setAttribute('colspan', $colspan);
 
         //TODO Find values for rowspan
 //        $rowspan = $this->getRowspan();

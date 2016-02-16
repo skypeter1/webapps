@@ -4,8 +4,8 @@ ini_set('xdebug.var_display_max_depth', 15);
 ini_set('xdebug.var_display_max_children', 5256);
 ini_set('xdebug.var_display_max_data', 157784);
 ini_set('max_execution_time', 600);
-//App::import('Vendor', 'Chaucer/Common/ProgressUpdater');
-//set_time_limit (60);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 include_once "HTMLDocument.php";
 include_once "HTMLElement.php";
@@ -18,13 +18,13 @@ include_once "XWPF/XWPFList.php";
 include_once "XWPF/XWPFParagraph.php";
 
 
-
 /**
-* HWPFToHTMLConverter is a class that takes a doc or docx file as input and converts it to a Simple HTMLDocument, keeping stylesheets, images e.g.
-* The main idea is to reuse Apache POI parser that is integrated with JavaBridge web app on a tomcat server.
-* @author Avetis Zakharyan
-*/
-class XWPFToHTMLConverter {
+ * HWPFToHTMLConverter is a class that takes a doc or docx file as input and converts it to a Simple HTMLDocument, keeping stylesheets, images e.g.
+ * The main idea is to reuse Apache POI parser that is integrated with JavaBridge web app on a tomcat server.
+ * @author Avetis Zakharyan
+ */
+class XWPFToHTMLConverter
+{
 
     /**
      * Instance of Simple HTML document, that converter will be filling with data
@@ -40,7 +40,7 @@ class XWPFToHTMLConverter {
      * HWPF document from parsed word file
      */
     private $document;
-    
+
     /**
      * Paragraph numbering state
      */
@@ -70,14 +70,14 @@ class XWPFToHTMLConverter {
      * Numbering
      */
     private $numbering;
-    
+
     /**
      * HTML Document pages and styles
      */
     private $pages;
     private $styles;
     public $mainStyleSheet;
-    
+
     /**
      * Document images
      */
@@ -96,6 +96,7 @@ class XWPFToHTMLConverter {
     private $tocLevel;
     private $tocNumbering;
     private $hasTOC;
+    private $tableOfContents;
 
     /**
      * XWPF Document Information
@@ -142,17 +143,23 @@ class XWPFToHTMLConverter {
      * Headlines
      */
     private $headlineElements;
+    private $headlineId;
+    private $headLineList;
 
     /**
      * Sections
      */
     private $sectionContainer;
     private $contador;
+    private $articleNumber;
+    private $auxArticleContainer;
 
     /**
      * Java
      */
     private $localJava;
+    private $headlineIdSection;
+    public static $imagesPath;
 
     /**
      *
@@ -173,6 +180,8 @@ class XWPFToHTMLConverter {
 
         // Store temp path and progress tracker per instance
         $this->_tmp_path = $tmp_path;
+        self::$imagesPath = $tmp_path;
+
         $this->_progress = $progress;
 
         // Start progress
@@ -187,9 +196,9 @@ class XWPFToHTMLConverter {
         }
 
         // Download JavaPHP bridge to local temp for cross domain access
-        $url = $bridge_host.'WordBridge/java/Java.inc';
+        $url = $bridge_host . 'WordBridge/java/Java.inc';
         $local = "/var/lib/tomcat7/webapps/WordBridge/java/Java.inc";
-       // $remote_contents = file_get_contents($url);
+        // $remote_contents = file_get_contents($url);
         //file_put_contents($local, $remote_contents);
 
         // Setup Java servlet (used by Java.inc must be present)
@@ -207,16 +216,20 @@ class XWPFToHTMLConverter {
         if (!defined('JAVA_HOSTS')) {
             define('JAVA_HOSTS', $bridge_host);
         }
-        
+
         // Include Java PHP local bridge library
         include($local);
         $this->localJava = $local;
-        //var_dump($this->localJava);
         // Adjust progress step
         //$this->_progress->incrementStep();
     }
 
-    public function getMainStyleSheet(){
+    public static function getDirectoryPath(){
+        return self::$imagesPath;
+    }
+
+    public function getMainStyleSheet()
+    {
         return $this->mainStyleSheet;
     }
 
@@ -244,17 +257,21 @@ class XWPFToHTMLConverter {
         $this->levelCounter = 0;
         $this->pageCounter = 0;
         $this->customListLevel = 0;
-        $this->headlineElements = array("h1","h2","h3","h4","h5","h6");
+        $this->headlineElements = array("h1", "h2", "h3", "h4", "h5", "h6");
         $this->sectionContainer = null;
         $this->contador = null;
         $this->parsingFile = $docx_file;
         $this->unsupportedImageFormats = array('emf' => 'emf', 'wmf' => 'wmf');
         $this->hasTOC = false;
+        $this->articleNumber = 0;
+        $this->headlineId = 0;
+        $this->tableOfContents = array();
+        $this->headlineIdSection = -1;
+        $this->headLineList = array();
 
         //Load document and update progress
         $this->document = $this->loadDocx($docx_file);
         //$this->updateStep($docx_file);
-        //var_dump($this->document);
 
         $this->numPages = java_values($this->document->getProperties()->getExtendedProperties()->getUnderlyingProperties()->getPages());
 
@@ -272,23 +289,32 @@ class XWPFToHTMLConverter {
      * @return Java
      * @throws Exception
      */
-    public function loadDocx($path){
+    public function loadDocx($path)
+    {
 
         $fileInputStream = new Java("java.io.FileInputStream", $path);
         $OPCPackage = new Java("org.apache.poi.openxml4j.opc.OPCPackage");
 
-        if(java_is_null($fileInputStream)){
+        if (java_is_null($fileInputStream)) {
             throw new Exception('[XWPFToHTMLConverter::loadDocx] Null Input Stream');
         }
         $input = java_values($OPCPackage->open($fileInputStream));
 
-        if(java_is_null($input)){
+        if (java_is_null($input)) {
             throw new Exception('[XWPFToHTMLConverter::loadDocx] Java Input Stream Error');
         }
 
         $document = new Java("org.apache.poi.xwpf.usermodel.XWPFDocument", $input);
+        //var_dump(java_values($document->getDocument()->toString()));
+        //var_dump(java_values($document->getDocument()->getBody()->getSectPr()->getPgSz()->getW()->doubleValue()->toString()));
+        $pageSize = java_values($document->getDocument()->getBody()->getSectPr()->getPgSz());
+        $pageHeight = java_values($pageSize->getH()->doubleValue()->toString());
+        $pageWidht =  java_values($pageSize->getW()->doubleValue()->toString());
+//        var_dump((int) $pageHeight / 20);
+//        var_dump((int) $pageWidht / 20);
 
-        if(is_null($document)){
+
+        if (is_null($document)) {
             throw new Exception('[XWPFToHTMLConverter::loadDocx] POI XWPFDocument Internal Error');
         }
 
@@ -324,7 +350,9 @@ class XWPFToHTMLConverter {
         return $this->hasTOC;
     }
 
-    public function getTocNumbering(){
+
+    public function getTocNumbering()
+    {
         return $this->tocNumbering;
     }
 
@@ -336,7 +364,7 @@ class XWPFToHTMLConverter {
     {
         // Create a new HTML page
         $this->createPage();
-        
+
         // Start parsing
         $this->parseSection();
 
@@ -350,7 +378,7 @@ class XWPFToHTMLConverter {
         // Set new HTML document and its style sheet
         $document = new HTMLDocument();
         $document->styleSheet = new StyleSheet();
-        
+
         // Add document to local pages
         $this->pages[] = $document;
 
@@ -358,59 +386,63 @@ class XWPFToHTMLConverter {
         $this->htmlDocument = $document;
     }
 
-    /**
-     * @param $header
-     *
-     * @return HTMLElement
-     */
-    private function processHeaderFooter($header){
-
-        //Set current processed part
-        $this->currentProcessedPart = "HEADER";
-
-        //Create header container
-        $headerContainer = new HTMLElement(HTMLElement::DIV);
-
-        //Read header body elements
-        $headerElements = java_values($header->getBodyElements());
-
-        foreach($headerElements as $keyHead =>  $headerElement){
-
-            // Check if element is a table
-            if (java_instanceof($headerElement, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
-
-                // Get table out of element
-                $tableHead = java_cast($headerElement, 'org.apache.poi.xwpf.usermodel.XWPFTable');
-
-                // Parse table
-                $tableElement = $this->parseTable($tableHead, $keyHead);
-
-                //Add table to the
-                $headerContainer->addInnerElement($tableElement);
-            }
-
-            //Check if element is a paragraph
-            if (java_instanceof($headerElement, java('org.apache.poi.xwpf.usermodel.XWPFParagraph'))) {
-
-                // Get paragraph out of element
-                $paragraph = java_cast($headerElement, 'org.apache.poi.xwpf.usermodel.XWPFParagraph');
-
-                // Parse paragraph
-                $paragraphHTMLElementHeader = $this->parseParagraph($paragraph, $keyHead);
-
-                //Add paragraph to the container
-                $headerContainer->addInnerElement($paragraphHTMLElementHeader);
-            }
-        }
-
-        return $headerContainer;
-
-    }
+//    /**
+//     * @param $header
+//     *
+//     * @return HTMLElement
+//     */
+//    private function processHeaderFooter($header)
+//    {
+//
+//        //Set current processed part
+//        $this->currentProcessedPart = "HEADER";
+//
+//        //Create header container
+//        $headerContainer = new HTMLElement(HTMLElement::DIV);
+//
+//        //Read header body elements
+//        $headerElements = java_values($header->getBodyElements());
+//
+//        foreach ($headerElements as $keyHead => $headerElement) {
+//
+//            // Check if element is a table
+//            if (java_instanceof($headerElement, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
+//
+//                // Get table out of element
+//                $tableHead = java_cast($headerElement, 'org.apache.poi.xwpf.usermodel.XWPFTable');
+//
+//
+//
+//                // Parse table
+//                $tableElement = $this->parseTable($tableHead, $keyHead);
+//
+//                //Add table to the
+//                $headerContainer->addInnerElement($tableElement);
+//            }
+//
+//            //Check if element is a paragraph
+//            if (java_instanceof($headerElement, java('org.apache.poi.xwpf.usermodel.XWPFParagraph'))) {
+//
+//                // Get paragraph out of element
+//                $paragraph = java_cast($headerElement, 'org.apache.poi.xwpf.usermodel.XWPFParagraph');
+//
+//                // Parse paragraph
+//                $paragraphHTMLElementHeader = $this->parseParagraph($paragraph, $keyHead);
+//
+//                //Add paragraph to the container
+//                $headerContainer->addInnerElement($paragraphHTMLElementHeader);
+//            }
+//        }
+//
+//        return $headerContainer;
+//
+//    }
 
     /**
      * Collect the header and footer objects for the current document
      */
-    private function collectHeaderFooterInformation(){
+    private function collectHeaderFooterInformation()
+    {
 
         //Setting doc headers
         $headerListSize = java_values($this->document->getHeaderList()->size());
@@ -453,8 +485,6 @@ class XWPFToHTMLConverter {
         // Get document body elements
         $elements = java_values($this->document->getBodyElements());
 
-        //var_dump(java_values($this->document->getDocument()->ToString()));
-
         //Set current processed part
         $this->currentProcessedPart = "BODY";
 
@@ -464,12 +494,10 @@ class XWPFToHTMLConverter {
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
 
-                $stylesheet = $this->mainStyleSheet;
-                $xwpfTable =  new XWPFTable($element, $key, $stylesheet);
-                $stdTable = $xwpfTable->parseTable();
+                $table = new XWPFTable($element,$key,$this->mainStyleSheet);
+                $tableElement = $table->parseTable();
+                $container->addInnerElement($tableElement);
 
-                //Add element to container
-                $container->addInnerElement($stdTable);
 //                // Get table out of element
 //                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
 //
@@ -478,6 +506,7 @@ class XWPFToHTMLConverter {
 //
 //                //Add table to the
 //                $container->addInnerElement($tableElement);
+
             }
 
             // Check if element is a paragraph
@@ -488,10 +517,10 @@ class XWPFToHTMLConverter {
 
                 //$beforeProcess = $this->inspectParagraph($paragraph, $container ,$key);
 
-                if($this->checkLastRenderedPage($paragraph)){
+                if ($this->checkLastRenderedPage($paragraph)) {
                     //echo "page:".$this->pageCounter."<br/>";
-                  //  $container->addInnerElement($this->auxContainer[0]);
-                  //  $container->addInnerElement($this->auxContainer[1]);
+                    //  $container->addInnerElement($this->auxContainer[0]);
+                    //  $container->addInnerElement($this->auxContainer[1]);
                 }
 
                 //Check if the element is a list
@@ -509,6 +538,7 @@ class XWPFToHTMLConverter {
 //                    $XWPFparagraph->setId($key);
 //                    $paragraphHTMLElement = $XWPFparagraph->parseParagraph();
 //                      var_dump($parContainer);
+
 
                     $container = $this->processContainer($paragraphHTMLElement, $container, $key);
 
@@ -531,7 +561,7 @@ class XWPFToHTMLConverter {
 
         if ($numberingInfo) {
             $xwpfList = new XWPFList($paragraph, $this->mainStyleSheet);
-            $xwpfList->processList($numberingInfo , $container , $paragraph , $key, $this->listNumId, $this->listLevelState);
+            $xwpfList->processList($numberingInfo, $container, $paragraph, $key, $this->listNumId, $this->listLevelState);
 
             //Assign new list level state and num id
             $this->listLevelState = $numberingInfo['lvl'];
@@ -540,17 +570,18 @@ class XWPFToHTMLConverter {
 
     }
 
-    private function setCustomList($container, $key){
+    private function setCustomList($container, $key)
+    {
 
-        if(is_object($this->auxList)){
+        if (is_object($this->auxList)) {
             $listTag = $this->auxList->getTagName();
 
-            if($listTag == "ul"){
+            if ($listTag == "ul") {
                 $container->setId($key);
                 $container->addInnerElement($this->auxList);
-            }elseif($listTag == "li"){
-                $listContainer =$container->getLastElement();
-                if(is_object($listContainer)){
+            } elseif ($listTag == "li") {
+                $listContainer = $container->getLastElement();
+                if (is_object($listContainer)) {
                     $listContainer->addInnerElement($this->auxList);
                 }
             }
@@ -573,27 +604,24 @@ class XWPFToHTMLConverter {
         if ($lvl == 1) {
             $this->firstLevel++;
             $this->secondLevel = 0;
-        }elseif($lvl == 2) {
+        } elseif ($lvl == 2) {
             $this->secondLevel = 1;
         }
 
         //Construct numbering string
         $sectionString = "";
 
-        if($this->secondLevel == 0){
-            $sectionString = $this->grandNumbering.".".$this->firstLevel;
+        if ($this->secondLevel == 0) {
+            $sectionString = $this->grandNumbering . "." . $this->firstLevel;
             $this->levelCounter = 0;
-        }elseif($this->secondLevel == 1){
+        } elseif ($this->secondLevel == 1) {
             $this->levelCounter++;
-            $sectionString = $this->grandNumbering.".".$this->firstLevel.".".$this->levelCounter;
+            $sectionString = $this->grandNumbering . "." . $this->firstLevel . "." . $this->levelCounter;
         }
 
         //Create HTML Element to add numbering
         $container = new HTMLElement(HTMLElement::SPAN);
         $container->setInnerText($sectionString);
-
-//        $container = new HTMLElement(HTMLElement::SECTION);
-//        $container->addInnerElement($numberingContainer);
 
         return $container;
     }
@@ -602,26 +630,28 @@ class XWPFToHTMLConverter {
      * @param $paragraph
      * @param $container
      */
-    private function parseTocBookmarks($paragraph, $container){
+    private function parseTocBookmarks($paragraph, $container)
+    {
 
         //Get the bookmarks from the xml of the paragraph
         $sectionStyleXml = java_values($paragraph->getCTP()->toString());
         $sectionParagraphXml = str_replace('w:', 'w', $sectionStyleXml);
         $sectionXml = new SimpleXMLElement($sectionParagraphXml);
         $tocStyle = $sectionXml->xpath('wbookmarkStart');
-        //var_dump($tocStyle);
+
         //Parse section numbering
-        foreach($tocStyle as $bookmark){
+        foreach ($tocStyle as $bookmark) {
 
             //Get bookmark name
             $mark = (string)$bookmark['wname'];
 
             //Compare the current bookmark to the one in toc numbering
-            if(array_key_exists($mark, $this->tocNumbering))
-            {
+            if (array_key_exists($mark, $this->tocNumbering)) {
+
                 //Add the container to the paragraph
                 $sectionContainer = new HTMLElement(HTMLElement::SPAN);
                 $sectionText = $this->tocNumbering[$mark];
+                //var_dump($sectionText);
                 $this->grandNumbering = $sectionText;
                 $this->firstLevel = 0;
                 $this->secondLevel = 0;
@@ -635,17 +665,18 @@ class XWPFToHTMLConverter {
      * @param $numberingInfo
      * @return mixed
      */
-    public function getAbstractNum($numberingInfo){
+    public function getAbstractNum($numberingInfo)
+    {
 
         //Cast to XWPFNumbering
         $numbering = $this->numbering;
 
         //Create java big integer object
-        $numId = new Java('java.math.BigInteger',$numberingInfo['numId']);
+        $numId = new Java('java.math.BigInteger', $numberingInfo['numId']);
 
         $abstractNumId = java_values($numbering->getAbstractNumId($numId));
 
-        if(!is_object($abstractNumId)){
+        if (!is_object($abstractNumId)) {
             return null;
         }
 
@@ -667,10 +698,11 @@ class XWPFToHTMLConverter {
      * @param $numberingInfo
      * @return array
      */
-    public function extractListProperties($abstractNum, $numberingInfo){
+    public function extractListProperties($abstractNum, $numberingInfo)
+    {
 
         //Check if the object was created
-        if(is_object($abstractNum)) {
+        if (is_object($abstractNum)) {
 
             //get xml structure
             $stringNumbering = java_values($abstractNum->getCTAbstractNum()->ToString());
@@ -681,7 +713,7 @@ class XWPFToHTMLConverter {
             $listSymbol = $ilvlSymbol[$numberingInfo['lvl']]["wval"];
 
             //Calculate list indentation
-            $listIndentation = $this->calculateListIndentation($numXml ,$numberingInfo);
+            $listIndentation = $this->calculateListIndentation($numXml, $numberingInfo);
 
             //check if the list type exist and get style rule
             if (is_array($ilvl)) {
@@ -692,7 +724,7 @@ class XWPFToHTMLConverter {
 
             $listProperties = array('type' => $listTypeStyle, 'indentation' => $listIndentation);
 
-        }else{
+        } else {
             //Default settings
             $listProperties = array('type' => '', 'indentation' => '');
         }
@@ -705,20 +737,21 @@ class XWPFToHTMLConverter {
      * @param $paragraph
      * @param $styleXML
      */
-    public function parseCustomStyleList($paragraph,$styleXML){
+    public function parseCustomStyleList($paragraph, $styleXML)
+    {
 
         $styleXML = str_replace('w:', 'w', $styleXML);
         $styleXML = str_replace('-', '', $styleXML);
         $xmlStyle = new SimpleXMLElement($styleXML);
-        $numStyle= intval($xmlStyle->xpath('wpPr/wnumPr/wnumId')[0]['wval']);
+        $numStyle = intval($xmlStyle->xpath('wpPr/wnumPr/wnumId')[0]['wval']);
 
         $numberingStyleList = array('numId' => $numStyle, 'lvl' => 0);
 
         $abstractNum = $this->getAbstractNum($numberingStyleList);
-        if(!is_null($abstractNum)) {
+        if (!is_null($abstractNum)) {
             $listProperties = $this->extractListProperties($abstractNum, $numberingStyleList);
-        }else{
-            $listProperties = array('type'=>'disc');
+        } else {
+            $listProperties = array('type' => 'disc');
         }
         $listItemStyle = new HTMLElement(HTMLElement::LI);
         $text = java_values($paragraph->getText());
@@ -726,21 +759,258 @@ class XWPFToHTMLConverter {
         $listItemStyle->setInnerText($text);
         $listItemStyleContainer = null;
 
-        if($this->customListLevel == 0){
+        if ($this->customListLevel == 0) {
 
             $newList = new HTMLElement(HTMLElement::UL);
-            $newList->setAttribute('style','list-style-type:'.$listProperties['type']);
+            $newList->setAttribute('style', 'list-style-type:' . $listProperties['type']);
             $newList->addInnerElement($listItemStyle);
             $this->customListLevel++;
             $listItemStyleContainer = $newList;
 
-        }else{
+        } else {
             $listItemStyleContainer = $listItemStyle;
         }
 
         $this->auxList = $listItemStyleContainer;
         //return $listItemStyleContainer;
     }
+
+    /**
+     * Parse Word table
+     * @static var   int Unique ID
+     * @param       object  Table
+     * @param       string  Element key
+     * @return      HTMLElement
+     */
+    private function parseTable($table, $parIterator)
+    {
+        // Set initial unique id for element
+        static $uniqueId = 10000;
+
+        // Create new HTML table element
+        $container = new HTMLElement(HTMLElement::TABLE);
+
+        //Get Styles
+        $this->styles = $this->document->getStyles();
+
+        // Create new table style class
+        $tableStyleClass = new StyleClass();
+
+        // Check if table has style ID assigned
+        if (java_values($table->getStyleID()) != null) {
+
+            // Get style name
+            $style = $this->styles->getStyle($table->getStyleID());
+            //$style_name = java_values($style->getName());
+
+            // Apply style to table style class
+            $styleXML = java_values($style->getCTStyle()->toString());
+            $tableStyleClass = $this->processStyle($tableStyleClass, $styleXML);
+
+            // Get XML out of XML style
+            $tmpStyleXML = str_replace('w:', 'w', $styleXML);
+            $xml = new SimpleXMLElement($tmpStyleXML);
+        }
+
+        // Get horizontal border attributes (color, size, space)
+        $inHBsz = java_values($table->getInsideHBorderSize());
+        $inHBsp = java_values($table->getInsideHBorderSpace());
+
+        //Set default borders
+        if (!java_is_null($table->getInsideHBorderColor())) {
+            $inHBc = java_values($table->getInsideHBorderColor());
+        } else {
+            $inHBc = '00000A';
+        }
+
+        // Get horizontal border attributes (type)
+        if (!java_is_null($table->getInsideHBorderType())) {
+            $inHBtp = java_values($table->getInsideHBorderType()->name());
+        } else {
+            $inHBtp = 'SINGLE';
+        }
+
+        // Get vertical border attributes (color, size, space)
+        $inHVBsz = java_values($table->getInsideVBorderSize());
+        $inVBsp = java_values($table->getInsideVBorderSpace());
+
+        if (!java_is_null($table->getInsideHBorderColor())) {
+            $inVBc = java_values($table->getInsideHBorderColor());
+        } else {
+            $inVBc = '00000A';
+        }
+
+        // Get vertical border attributes (type)
+        if (!java_is_null($table->getInsideVBorderType())) {
+            $inVBtp = java_values($table->getInsideVBorderType()->name());
+        } else {
+            $inVBtp = 'SINGLE';
+        }
+
+        //Set default borders to header tables
+        if ($this->currentProcessedPart == "HEADER") {
+            $inVBc = 'C0C0C0';
+            $inHBc = 'C0C0C0';
+        }
+
+        // Set border attributes
+        $tableStyleClass->setAttribute("border-collapse", "inherit");
+        $tableStyleClass->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+        $tableStyleClass->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+        $tableStyleClass->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+        $tableStyleClass->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+
+        // Preset default width of the table to 100%
+        $tableStyleClass->setAttribute("width", "100%");
+
+        // Get rows and iterate through them
+        $rows = java_values($table->getRows());
+
+        foreach ($rows as $rowKey => $row) {
+
+            // Create new row tag
+            $rowTag = new HTMLElement(HTMLElement::TR);
+            $rowXmlStr = java_values($row->getCtRow()->toString());
+            $tmpRowXmlStr = str_replace('w:', 'w', $rowXmlStr);
+            $rowXml = new SimpleXMLElement($tmpRowXmlStr);
+
+            // Get row height
+            $height = $rowXml->xpath('wtrPr/wtrHeight');
+            $height = (isset($height[0]['wval'])) ? round(intval($height[0]['wval']) / 15.1) . 'px' : 'auto';
+
+            // Set style attributes on the row
+            $trStyle = new StyleClass();
+            $trStyle->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+            $trStyle->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+            $trStyle->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+            $trStyle->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+            $trStyle->setAttribute("height", $height);
+
+            // Set class on the row
+            $cnm = $this->mainStyleSheet->getClassName($trStyle);
+            $rowTag->setClass($cnm);
+
+            // Get and iterate through the row cells
+            $cells = java_values($row->getTableICells());
+            foreach ($cells as $cellKey => $cell) {
+
+                if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))) {
+                    // Create new cell tag
+                    $cellTag = new HTMLElement(HTMLElement::TD);
+                    $xmlstr = java_values($cell->getCTTc()->toString());
+                    $xmlstr = str_replace('w:', 'w', $xmlstr);
+                    $xml = new SimpleXMLElement($xmlstr);
+
+                    // Create cell attributes
+                    $cellDescribers = array();
+                    if ($rowKey == 0) $cellDescribers[] = 'firstRow';
+                    if ($rowKey == count($rows) - 1) $cellDescribers[] = 'lastRow';
+                    if ($cellKey == 0) $cellDescribers[] = 'firstCol';
+                    if ($cellKey == count($cells) - 1) $cellDescribers[] = 'lastCol';
+                    if ($cellKey % 2 == 0) $cellDescribers[] = 'band1Vert';
+                    if ($cellKey % 2 == 1) $cellDescribers[] = 'band2Vert';
+                    if ($rowKey % 2 == 0) $cellDescribers[] = 'band1Horz';
+                    if ($rowKey % 2 == 1) $cellDescribers[] = 'band2Horz';
+                    if ($rowKey == 0 && $cellKey == count($cells) - 1) $cellDescribers[] = 'neCell';
+                    if ($rowKey == 0 && $cellKey == 0) $cellDescribers[] = 'nwCell';
+                    if ($rowKey == count($rows) - 1 && $cellKey == count($cells) - 1) $cellDescribers[] = 'seCell';
+                    if ($rowKey == 0 && $cellKey == 0) $cellDescribers[] = 'swCell ';
+
+                    // Set cell attributes
+                    $tdStyle = new StyleClass();
+
+                    // Set colspan
+                    $gridspan = $xml->xpath('*/wgridSpan');
+                    if ($gridspan) {
+                        $gridspan = ((string)$gridspan[0]['wval']);
+                        $cellTag->setAttribute('colspan', $gridspan);
+                    }
+
+                    // Set cell width
+                    $cellwidth = $xml->xpath('*/wtcW');
+                    if ($cellwidth) {
+                        $cellwidth = ((string)$cellwidth[0]['ww']);
+                        $cellwidth = round($cellwidth / 15.1);
+                        $tdStyle->setAttribute('width', $cellwidth . 'px');
+                    }
+
+                    // Set cell background color
+                    $color = java_values($cell->getColor());
+                    if ($color) {
+                        $tdStyle->setAttribute("background-color", "#" . "$color");
+                    }
+
+                    // Set border type
+
+                    if ($inVBc == 'auto') $inVBc = '000000';
+                    if ($inHBc == 'auto') $inHBc = '000000';
+                    if ($this->currentProcessedPart == "HEADER") {
+                        $inVBc = 'auto';
+                        $inHBc = 'auto';
+                    }
+                    if ($inVBc > '') {
+                        $tdStyle->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+                        $tdStyle->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+                        $tdStyle->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+                        $tdStyle->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+                    }
+
+                    // Set class on the cell
+                    $cnm = $this->mainStyleSheet->getClassName($tdStyle);
+                    $cellTag->setClass($cnm);
+
+                    // Get cell text
+                    //$text = java_values($cell->getText());
+
+                    // Get and iterate through cell paragraphs
+                    $paragraphs = java_values($cell->getParagraphs());
+                    foreach ($paragraphs as $key => $paragraph) {
+
+                        // Adjust unique ID for paragraph
+                        $uniqueId++;
+
+                        // Parse paragraph
+                        $paragraphHTMLElement = $this->parseParagraph($paragraph, $uniqueId);
+
+                        // Set cell margins on temp style
+                        $tmpStyle = new StyleClass();
+
+                        // Apply margins to paragraph
+                        $className = $this->mainStyleSheet->getClassName($tmpStyle);
+
+                        if (is_object($paragraphHTMLElement)) {
+                            $paragraphHTMLElement->setClass($paragraphHTMLElement->getClass() . ' ' . $className);
+                            // Add paragraph to cell tag
+                            $cellTag->addInnerElement($paragraphHTMLElement);
+                        } else {
+                            CakeLog::debug('[XWPFToHTMLConverter::parseTable] Empty HTML Element on' . java_values($paragraph->getText()));
+                        }
+
+                    }
+
+                    // Add cell tag to row
+                    $rowTag->addInnerElement($cellTag);
+                }
+
+                if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFSDTCell'))) {
+                    $rowXml = java_values($row->getCtRow()->ToString());
+                    $xwpfSdtCell = new XWPFSDTCell($cell, $rowXml);
+                    $container = $xwpfSdtCell->parseSDTCell();
+                }
+            }
+
+            // Add row to the container
+            $container->addInnerElement($rowTag);
+        }
+
+        // Get and set class name on container
+        $className = $this->mainStyleSheet->getClassName($tableStyleClass);
+        $container->setClass($className);
+
+        // Return container
+        return $container;
+    }
+
 
     /**
      * Parses a paragraph element of HWPF document
@@ -753,7 +1023,7 @@ class XWPFToHTMLConverter {
         // Create new HTML element and its style class
         $container = new HTMLElement(HTMLElement::P);
         $styleClass = new StyleClass();
-        
+
         // Get styles
         $this->styles = $this->document->getStyles();
 
@@ -769,18 +1039,15 @@ class XWPFToHTMLConverter {
             $style = $this->styles->getStyle($paragraph->getStyleID());
             $styleXML = java_values($style->getCTStyle()->toString());
 
-            //Process style
-            $sectionContainer = null;
-
             //Check section numbering
             if (strpos($styleXML, '<w:ilvl') !== false) {
-                $sectionContainer = $this->processSectionNumberingToc($styleXML,$paragraph);
+                $sectionContainer = $this->processSectionNumberingToc($styleXML);
             }
 
             //Check if paragraph has custom style list
-            if (strpos($styleXML, '<w:numId') !== false and strpos($styleXML, 'w:customStyle="1"') !== false and !$numberingInfo ) {
+            if (strpos($styleXML, '<w:numId') !== false and strpos($styleXML, 'w:customStyle="1"') !== false and !$numberingInfo) {
                 //Parse Custom List
-               $this->parseCustomStyleList($paragraph, $styleXML);
+                $this->parseCustomStyleList($paragraph, $styleXML);
                 return self::CUSTOMLIST;
             }
 
@@ -792,11 +1059,6 @@ class XWPFToHTMLConverter {
 
                 //Create headline container
                 $container = $this->selectHeadlineContainer($styleName);
-
-                //Add section numbering if exists
-                if(is_object($sectionContainer)){
-                    $container->addInnerElement($sectionContainer);
-                }
             }
 
             //Process paragraph style
@@ -809,7 +1071,7 @@ class XWPFToHTMLConverter {
         }
 
         //Reset list level for custom lists
-        if(!$numberingInfo) {
+        if (!$numberingInfo) {
             $this->customListLevel = 0;
             $this->auxList = "";
         }
@@ -822,12 +1084,11 @@ class XWPFToHTMLConverter {
 
         //Set indentation to paragraphs except for list items
         if ($indentation > 0 and !$numberingInfo) {
-            $styleClass->setAttribute("text-indent", round($indentation / 11).'px');
+            $styleClass->setAttribute("text-indent", round($indentation / 11) . 'px');
         }
-        
+
         // Get xml of this paragraph
         $paragraph_xml = java_values($paragraph->getCTP()->toString());
-
         //var_dump($paragraph_xml);
 
         //Check for book mark links to TOC
@@ -845,43 +1106,31 @@ class XWPFToHTMLConverter {
             return $tocContainer;
         }
 
-        // Check for page break
-        if (strpos($paragraph_xml, '<w:br w:type="page"/>') !== false) {
-            
-            // This is a page break
-            return self::PAGE_BREAK;
-        }
-
         $this->setLineSpace($paragraph, $styleClass);
-
-        $prevCharRunHTMLElement = null;
         // Iterate through paragraph characters
-        $this->parseRuns($charRuns, $container, $prevCharRunHTMLElement);
+        $this->parseRuns($charRuns, $container);
 
         // Get alignment
         $alignment = java_values($paragraph->getAlignment()->getValue());
         $justification = HWPFWrapper::getAlignment($alignment);
-        
+
         // Set alignment on paragraph
         $styleClass->setAttribute("text-align", $justification);
 
         //Set class to html element
- 	    $className = $this->mainStyleSheet->getClassName($styleClass);
+        $className = $this->mainStyleSheet->getClassName($styleClass);
         $container->setClass('textframe horizontal common_style1 ' . $className);
-        
+
         // Add id attribute to container for this paragraph
         $container->setAttribute('id', 'div_' . $parIterator);
 
         // Wrap inside header tag if is a headlines
-        if(in_array($container->getTagName(),$this->headlineElements) ){
+        if (in_array($container->getTagName(), $this->headlineElements)) {
             $headline = $container;
             $container = new HTMLElement(HTMLElement::HEADER);
             $exists = $styleClass->attributeExists('font-size');
-            if(!$exists){
+            if (!$exists) {
                 $styleClass->setAttribute("font-size", 'medium');
-            }
-            if(is_object($sectionContainer)){
-                $container->setAttribute('data', 'article');
             }
             $container->addInnerElement($headline);
         }
@@ -896,30 +1145,46 @@ class XWPFToHTMLConverter {
      * @param $styleName
      * @return HTMLElement
      */
-    private function selectHeadlineContainer($styleName){
+    private function selectHeadlineContainer($styleName)
+    {
 
-        switch($styleName){
-            case 'heading 1': $headlineContainer = new HTMLElement(HTMLElement::H1); break;
-            case 'heading 2': $headlineContainer = new HTMLElement(HTMLElement::H2); break;
-            case 'heading 3': $headlineContainer = new HTMLElement(HTMLElement::H3); break;
-            case 'heading 4': $headlineContainer = new HTMLElement(HTMLElement::H4); break;
-            case 'heading 5': $headlineContainer = new HTMLElement(HTMLElement::H5); break;
-            case 'heading 6': $headlineContainer = new HTMLElement(HTMLElement::H6); break;
-            default: $headlineContainer = new HTMLElement(HTMLElement::H1); break;
+        switch ($styleName) {
+            case 'heading 1':
+                $headlineContainer = new HTMLElement(HTMLElement::H1);
+                break;
+            case 'heading 2':
+                $headlineContainer = new HTMLElement(HTMLElement::H2);
+                break;
+            case 'heading 3':
+                $headlineContainer = new HTMLElement(HTMLElement::H3);
+                break;
+            case 'heading 4':
+                $headlineContainer = new HTMLElement(HTMLElement::H4);
+                break;
+            case 'heading 5':
+                $headlineContainer = new HTMLElement(HTMLElement::H5);
+                break;
+            case 'heading 6':
+                $headlineContainer = new HTMLElement(HTMLElement::H6);
+                break;
+            default:
+                $headlineContainer = new HTMLElement(HTMLElement::H1);
+                break;
         }
 
         return $headlineContainer;
     }
 
-    private function checkLastRenderedPage($paragraph){
+    private function checkLastRenderedPage($paragraph)
+    {
 
         $paragraph_xml = java_values($paragraph->getCTP()->toString());
 
-        if (strpos($paragraph_xml, '<w:lastRenderedPageBreak/>') !== false and $this->toc ) {
+        if (strpos($paragraph_xml, '<w:lastRenderedPageBreak/>') !== false and $this->toc) {
             $this->pageCounter++;
             $this->processPageBreak();
             $isLastPage = true;
-        }else{
+        } else {
             $isLastPage = false;
         }
         return $isLastPage;
@@ -930,10 +1195,11 @@ class XWPFToHTMLConverter {
      * and footer on the body of the current page
      * @param $container
      */
-    private function processPageBreak(){
+    private function processPageBreak()
+    {
 
         //Init footer element
-        $footerHtml =  new HTMLElement(HTMLElement::TEXT);
+        $footerHtml = new HTMLElement(HTMLElement::TEXT);
 
         //Process Header
 //        if(is_object($this->headers[1])) {
@@ -960,41 +1226,41 @@ class XWPFToHTMLConverter {
         //$this->auxContainer = array($footerHtml, $headerHtml);
 
     }
-    
+
     /**
      * Extracts numbering information
      * @param   object  Paragraph
      * @return  string|boolean  Numbering
      */
-    private function paragraphExtractNumbering($paragraph) 
+    private function paragraphExtractNumbering($paragraph)
     {
         // Prepare paragraph XML
         $paragraph_xml = java_values($paragraph->getCTP()->toString());
         $paragraph_xml = str_replace('w:', 'w', $paragraph_xml);
-        
+
         // Get level
         $xml = new SimpleXMLElement($paragraph_xml);
         $lvl = $xml->xpath("wpPr/wnumPr/wilvl");
-        
+
         // Check if there is numbering on level
         if (!is_array($lvl) || count($lvl) == 0) {
             return false;
         }
-        
+
         // Get numbering ID
-        $lvl = $lvl[0]['wval'].'';
+        $lvl = $lvl[0]['wval'] . '';
         $numId = $xml->xpath("wpPr/wnumPr/wnumId");
-        $numId = $numId[0]['wval'].'';
-        
+        $numId = $numId[0]['wval'] . '';
+
         // Set numbering data
         $data['lvl'] = $lvl;
         $data['numId'] = $numId;
-        
+
         // Check numbering ID and return data
         if ($numId >= '1') {
             return $data;
         }
-        
+
         // No numbering found
         return false;
     }
@@ -1011,8 +1277,8 @@ class XWPFToHTMLConverter {
         $container = null;
 
         // Even non text elements will have a text property
-        $text = nl2br(java_values($characterRun->getText(0))); 
-        
+        $text = nl2br(java_values($characterRun->getText(0)));
+
         // Get and process pictures if there are any
         $pictures = java_values($characterRun->getEmbeddedPictures());
         if (count($pictures) > 0) {
@@ -1025,35 +1291,8 @@ class XWPFToHTMLConverter {
         //Get Run xml
         $charXml = java_values($characterRun->getCTR()->ToString());
 
-        //var_dump($charXml);
-
         //Check for section numbering
-        if (strpos($charXml, '<w:instrText xml:space="preserve">PAGEREF') !== false) {
-
-            //var_dump($charXml);
-
-            //Trim the xml REF
-            $start = strpos($charXml, '_Toc');
-            $end = strpos($charXml,'\h');
-            $lenght = $end - $start;
-
-            $tocRef = trim(substr($charXml,$start,$lenght));
-
-            //Calculate index value
-            $textParagraph = java_values($characterRun->getParagraph()->getText());
-            $indexValue = str_split(substr($textParagraph,0,3));
-            $value = '';
-            foreach($indexValue as $char){
-                if(is_numeric($char) and !empty($char) ){
-                    $value .= $char;
-                }
-            }
-
-            if(!$value == "") {
-                $this->tocNumbering[$tocRef] = $value;
-            }
-
-        }
+        $this->checkSectionNumbering($characterRun, $charXml);
 
         $charXml = str_replace('w:', 'w', $charXml);
         $xml = new SimpleXMLElement($charXml);
@@ -1069,13 +1308,13 @@ class XWPFToHTMLConverter {
         }
 
         //Check if is valid internet link
-        if($linkValue == 'InternetLink'){
+        if ($linkValue == 'InternetLink') {
 
             //Create empty A tag for the hyperlink and the text
             $container = new HTMLElement(HTMLElement::A);
-            $container->setAttribute('href',java_values($characterRun->getText(0)));
+            $container->setAttribute('href', java_values($characterRun->getText(0)));
 
-        }else {
+        } else {
             /* In every other case, if we got here we do simple text parsing */
             // Create empty text element
             $container = new HTMLElement(HTMLElement::SPAN);
@@ -1083,23 +1322,21 @@ class XWPFToHTMLConverter {
 
         $styleClass = $this->processCharacterRunStyle($characterRun, $xml);
 
-        if($container->getTagName() != 'a') {
+        if ($container->getTagName() != 'a') {
             $container = new HTMLElement(HTMLElement::SPAN);
         }
 
         $addNewLine = false;
 
         // Check for new line
-        if (strlen($text) == 1 && (substr($text, -1, 1) == "\r" || ord(substr($text, -1, 1)) == HWPFWrapper::BEL_MARK))
-        {
+        if (strlen($text) == 1 && (substr($text, -1, 1) == "\r" || ord(substr($text, -1, 1)) == HWPFWrapper::BEL_MARK)) {
             $addNewLine = true;
         }
 
         //escape text for xhtml
         $text = XhtmlEntityConverter::convertToNumericalEntities(htmlentities($text, ENT_COMPAT | ENT_XHTML));
 
-        if($addNewLine)
-        {
+        if ($addNewLine) {
             $text .= '<br />';
         }
 
@@ -1108,25 +1345,25 @@ class XWPFToHTMLConverter {
 
         //TODO check why this fails with large documents
         //if($container->getTagName() == '') $container->setInnerElement($text);
-        if($boldContainer and $italicContainer) {
+        if ($boldContainer and $italicContainer) {
 
             //Set Bold and italic semantic tags
             $container->addInnerElement($boldContainer);
             $boldContainer->addInnerElement($italicContainer);
             $italicContainer->setInnerText($text);
 
-        }elseif($boldContainer){
+        } elseif ($boldContainer) {
 
             //Set bold strong tag
             $container->addInnerElement($boldContainer);
             $boldContainer->setInnerText($text);
 
-        }elseif($italicContainer){
+        } elseif ($italicContainer) {
 
             // Set italic em tag
             $container->addInnerElement($italicContainer);
             $italicContainer->setInnerText($text);
-        }else{
+        } else {
 
             // Set inner text to span tag
             $container->setInnerText($text);
@@ -1134,7 +1371,7 @@ class XWPFToHTMLConverter {
 
         // Get and set class name on container
         $container->setClass($styleClass['style'] . ' textframe cke_focus');
-        
+
         // Return container
         return $container;
     }
@@ -1144,21 +1381,22 @@ class XWPFToHTMLConverter {
      * @param $xml
      * @return array
      */
-    private function processCharacterRunStyle($characterRun, $xml){
+    private function processCharacterRunStyle($characterRun, $xml)
+    {
 
         // Get color
         $color = java_values($characterRun->getColor());
-        if(is_null($color)){
+        if (is_null($color)) {
             $color = 'black';
-        }else {
-            $color = '#'.$color;
+        } else {
+            $color = '#' . $color;
         }
 
         //Get background highlight color
         $runCharShadows = $xml->xpath("wrPr/wshd");
-        if(!empty($runCharShadows)) {
+        if (!empty($runCharShadows)) {
             $backgroundColor = $runCharShadows[0]['wfill'];
-        }else {
+        } else {
             $backgroundColor = null;
         }
 
@@ -1178,7 +1416,7 @@ class XWPFToHTMLConverter {
         $underlined_type = java_values($characterRun->getUnderline()->getValue());
 
         //Default underline set to none
-        if(!is_int($underlined_type)) {
+        if (!is_int($underlined_type)) {
             $underlined_type = 12;
         }
         $underlined = HWPFWrapper::getUnderline($underlined_type);
@@ -1203,7 +1441,7 @@ class XWPFToHTMLConverter {
         $italicContainer = null;
 
         // Set style attributes
-        if ($color != 'black'  and $color!= '#000000'){
+        if ($color != 'black' and $color != '#000000') {
             $styleClass->setAttribute("color", $color);
         }
 
@@ -1216,7 +1454,7 @@ class XWPFToHTMLConverter {
         }
 
         if ($fontSize) {
-            $styleClass->setAttribute("font-size", (string)$fontSize."pt");
+            $styleClass->setAttribute("font-size", (string)$fontSize . "pt");
         }
 
         if ($fontFamily) {
@@ -1234,12 +1472,12 @@ class XWPFToHTMLConverter {
 
         $className = $this->mainStyleSheet->getClassName($styleClass);
 
-        $runStyle = array("style" => $className, "containers" => array("bold" => $boldContainer, "italic" => $italicContainer) );
+        $runStyle = array("style" => $className, "containers" => array("bold" => $boldContainer, "italic" => $italicContainer));
 
         return $runStyle;
 
     }
-    
+
     /**
      * Process element style
      * @param   object  Style class
@@ -1251,40 +1489,40 @@ class XWPFToHTMLConverter {
         // Get style XML
         $styleXML = str_replace('w:', 'w', $styleXML);
         $xml = new SimpleXMLElement($styleXML);
-        
+
         // TODO: Check what this is being used for (currently not in use)
         $based = $xml->xpath('*/wbasedOn');
         if ($based) $based = ((string)$based[0]['wval']);
-        
+
         // Get font
         $font = $xml->xpath('*/wrFonts');
         $font = ($font) ? ((string)$font[0]['wascii']) : '';
-        
+
         // Get background color
         $wshd = $xml->xpath('*/wshd');
         if ($wshd) $wshd = ((string)$wshd[0]['wfill']);
-        
+
         // Get text color
         $color = $xml->xpath('*/wcolor');
         $color = ($color) ? ((string)$color[0]['wval']) : false;
-	    if ($color == 'auto') $color = '000000';
-	
+        if ($color == 'auto') $color = '000000';
+
         // Get font size
         $sz = $xml->xpath('*/wsz');
-        $sz = ($sz) ? floor(((string)$sz[0]['wval'])/2) : '';
-        
+        $sz = ($sz) ? floor(((string)$sz[0]['wval']) / 2) : '';
+
         // Get first line indentation
         $ident = $xml->xpath('*/wind');
         if ($ident) {
-            $identNum = round(((string)$ident[0]['wfirstLine'])/11).'px';
+            $identNum = round(((string)$ident[0]['wfirstLine']) / 11) . 'px';
             if ($identNum == '0px') {
-                $identNum = round(((string)$ident[0]['wleft'])/11).'px';
+                $identNum = round(((string)$ident[0]['wleft']) / 11) . 'px';
             }
             $ident = $identNum;
         } else {
             $ident = '';
         }
-        
+
         // Get top and bottom margins
         $spacing = $xml->xpath('*/wspacing');
         if ($spacing) {
@@ -1294,33 +1532,33 @@ class XWPFToHTMLConverter {
             $spacingBefore = 0;
             $spacingAfter = 0;
         }
-        
+
         // Get font weight
         $bold = $xml->xpath('*/wb');
         $weight = ($bold) ? 'bold' : 'normal';
-        
+
         // Get font style
         $italic = $xml->xpath('*/wi');
         $italic = ($italic) ? true : false;
-        
+
         // Get text transformation
         $allcaps = $xml->xpath('*/wcaps');
         $allcaps = ($allcaps) ? true : false;
-        
+
         // Set margins
-        $styleClass->setAttribute("margin-top", round(((string)$spacingBefore)/11).'px');
-        $styleClass->setAttribute("margin-bottom", round(((string)$spacingAfter)/11).'px');
-        
+        $styleClass->setAttribute("margin-top", round(((string)$spacingBefore) / 11) . 'px');
+        $styleClass->setAttribute("margin-bottom", round(((string)$spacingAfter) / 11) . 'px');
+
         // Set font styles
         $styleClass->setAttribute("font-family", $font);
-        if ($color) $styleClass->setAttribute("color", '#'.$color);
-        if (@$wshd) $styleClass->setAttribute("background-color", '#'.$wshd);
-        if ($sz > '') $styleClass->setAttribute("font-size", $sz.'pt');
+        if ($color) $styleClass->setAttribute("color", '#' . $color);
+        if (@$wshd) $styleClass->setAttribute("background-color", '#' . $wshd);
+        if ($sz > '') $styleClass->setAttribute("font-size", $sz . 'pt');
         if ($weight != 'normal') $styleClass->setAttribute("font-weight", $weight);
         if ($italic) $styleClass->setAttribute("font-style", 'italic');
         if ($allcaps) $styleClass->setAttribute("text-transform", 'uppercase');
         if ($ident > '') $styleClass->setAttribute("text-indent", $ident);
-        
+
         // Return styled class
         return $styleClass;
     }
@@ -1328,12 +1566,12 @@ class XWPFToHTMLConverter {
     private function returnUnssuportedImageMessage($name)
     {
         $messageBox = new HTMLElement(HTMLElement::DIV);
-        $boxStyleClass =  new StyleClass();
+        $boxStyleClass = new StyleClass();
 
         $messageText = "This image could not be imported. It's not supported format.";
         $messageParagraph = new HTMLElement(HTMLElement::P);
         $messageParagraph->setInnerText($messageText);
-        $messageParagraph->setAttribute('style',"font-weight: bold");
+        $messageParagraph->setAttribute('style', "font-weight: bold");
         $messageBox->addInnerElement($messageParagraph);
 
         $imageName = (string)$name;
@@ -1341,38 +1579,38 @@ class XWPFToHTMLConverter {
         $nameParagraph->setInnerText($imageName);
         $messageBox->addInnerElement($nameParagraph);
 
-        $boxStyleClass->setAttribute('width','75%');
-        $boxStyleClass->setAttribute('margin','0 auto');
-        $boxStyleClass->setAttribute('background-color','#ffcfba');
-        $boxStyleClass->setAttribute('color','#d91c24');
-        $boxStyleClass->setAttribute('font-size','14px');
-        $boxStyleClass->setAttribute('font-family','Roboto, sans-serif');
-        $boxStyleClass->setAttribute('padding-bottom','25px');
-        $boxStyleClass->setAttribute('padding-top','25px');
-        $boxStyleClass->setAttribute('padding-right','25px');
-        $boxStyleClass->setAttribute('padding-left','25px');
-        $boxStyleClass->setAttribute('text-align','center');
+        $boxStyleClass->setAttribute('width', '75%');
+        $boxStyleClass->setAttribute('margin', '0 auto');
+        $boxStyleClass->setAttribute('background-color', '#ffcfba');
+        $boxStyleClass->setAttribute('color', '#d91c24');
+        $boxStyleClass->setAttribute('font-size', '14px');
+        $boxStyleClass->setAttribute('font-family', 'Roboto, sans-serif');
+        $boxStyleClass->setAttribute('padding-bottom', '25px');
+        $boxStyleClass->setAttribute('padding-top', '25px');
+        $boxStyleClass->setAttribute('padding-right', '25px');
+        $boxStyleClass->setAttribute('padding-left', '25px');
+        $boxStyleClass->setAttribute('text-align', 'center');
 
         $className = $this->mainStyleSheet->getClassName($boxStyleClass);
         $messageBox->setClass($className);
 
         return $messageBox;
     }
-    
+
     /**
      * Parses a picture element of HWPF document
      * @param   object    Picture
      * @return  HTMLElement
      */
     private function processPicture($picture)
-    {   
+    {
         // Get picture data
         $pictureData = $picture->getPictureData();
         $picContent = java_values($pictureData->getData());
         $picName = java_values($pictureData->getFileName());
         $picExtension = java_values($pictureData->suggestFileExtension());
 
-        if(array_key_exists($picExtension,$this->unsupportedImageFormats)){
+        if (array_key_exists($picExtension, $this->unsupportedImageFormats)) {
             $message = $this->returnUnssuportedImageMessage($picName);
             return $message;
         }
@@ -1382,11 +1620,11 @@ class XWPFToHTMLConverter {
         $xml = new SimpleXMLElement($ct_xml);
         $picExt = $xml->xpath('/xml-fragment/pic:spPr/a:xfrm/a:ext');
         $picExt = $picExt[0];
-       	$cx = $picExt['cx'];
-       	$cy = $picExt['cy'];
-       	$widthInch = round(intval($cx) / HWPFWrapper::EMUS_PER_INCH, 4);
-       	$heightInch = round(intval($cy) / HWPFWrapper::EMUS_PER_INCH, 4);
-        
+        $cx = $picExt['cx'];
+        $cy = $picExt['cy'];
+        $widthInch = round(intval($cx) / HWPFWrapper::EMUS_PER_INCH, 4);
+        $heightInch = round(intval($cy) / HWPFWrapper::EMUS_PER_INCH, 4);
+
         // Set ALT data
         $alt = '';
         if (isset($this->images_data[$this->images_currentIndex])) {
@@ -1394,18 +1632,18 @@ class XWPFToHTMLConverter {
             if (strlen($imageData['title']) > 0) {
                 $alt = $imageData['title'];
                 if (strlen($imageData['descr']) > 0) {
-                    $alt .=': '.$imageData['descr'];
+                    $alt .= ': ' . $imageData['descr'];
                 }
             } else if (strlen($imageData['descr']) > 0) {
                 $alt = $imageData['descr'];
             }
         }
-        
+
         // Adjust current image index
         $this->images_currentIndex++;
 
         // Create path to image
-        $path = $this->_tmp_path . '/images/'.$picName;
+        $path = $this->_tmp_path . '/images/' . $picName;
         $dirname = dirname($path);
         if (!is_dir($dirname)) {
             mkdir($dirname, 0775, true);
@@ -1416,59 +1654,26 @@ class XWPFToHTMLConverter {
         fwrite($fp, $picContent);
         fclose($fp);
         $this->images[$picName] = $picName;
-        
+
         // Create fake ID
-        $fakeId = strtolower(str_replace(' ', '', $picName)).'_'.$this->images_currentIndex;
+        $fakeId = strtolower(str_replace(' ', '', $picName)) . '_' . $this->images_currentIndex;
 
         // Creating img element with path to newly created picture
         $imageContainer = new HTMLElement(HTMLElement::IMG);
         $imageContainer->setAttribute("style", "width: {$widthInch}in; height: {$heightInch}in; display: initial");
-        $imageContainer->setAttribute("src",  '../images/'.$picName);
-        $imageContainer->setAttribute("data-ch-file-id",  "{$picName}");
-        $imageContainer->setAttribute("alt",  $alt);
-        $imageContainer->setAttribute("title",  $alt);
-        $imageContainer->setAttribute("id",  'image_'.$fakeId);
+        $imageContainer->setAttribute("src", '../images/' . $picName);
+        $imageContainer->setAttribute("data-ch-file-id", "{$picName}");
+        $imageContainer->setAttribute("alt", $alt);
+        $imageContainer->setAttribute("title", $alt);
+        $imageContainer->setAttribute("id", 'image_' . $fakeId);
 
         //Add Special markup
         $container = new HTMLElement(HTMLElement::FIGURE);
         $container->addInnerElement($imageContainer);
-        
+
         // Return image container
         return $container;
     }
-
-    /**
-     * Collect all the document drawing properties
-     * @param   object  Paragraph
-     */
-    private function collectDrawingProperties($paragraph)
-    {
-        // Prepare XML
-        $xml = java_values($paragraph->getCTP()->toString());
-        $xml = str_replace('w:', 'w', $xml);
-        $xml = str_replace('wp:', 'wp', $xml);
-        $xml = new SimpleXMLElement($xml);
-        
-        // Get object data
-        $obj = $xml->xpath("wr/wdrawing/wpinline/wpdocPr");
-        
-        // Check if there are any properties
-        if (count($obj) > 0) {
-            
-            // Loop through images for this paragraph
-            foreach ($obj as $key => $imageData) {
-                
-                // Add to images data (append '' so it converts to string)
-                $this->images_data[count($this->images_data)] = array(
-                    'id' => $imageData[0]['id'].'',
-                    'name' => $imageData[0]['name'].'',
-                    'title' => (isset($imageData[0]['title'])) ? $imageData[0]['title'].'' : '',
-                    'descr' => (isset($imageData[0]['descr'])) ? $imageData[0]['descr'].'' : ''
-                );
-            }
-        }
-    }
-
 
     /**
      * Get HTMLDocument
@@ -1487,7 +1692,7 @@ class XWPFToHTMLConverter {
     {
         return $this->pages;
     }
-        
+
     /**
      * Get images
      * @return  object  Images
@@ -1510,12 +1715,12 @@ class XWPFToHTMLConverter {
         //Parse paragraph
         $paragraphContainer = $this->parseParagraph($paragraph, $this->listItemIterator);
 
-        if(is_object($paragraphContainer)){
+        if (is_object($paragraphContainer)) {
             $paragraphContainer->setAttribute('style', 'text-indent:0px');
             $this->listItemIterator++;
             $listItem->setInnerElement($paragraphContainer);
-        }elseif(!is_object($paragraphContainer)){
-            var_dump(java_values($paragraph->getText()));
+        } elseif (!is_object($paragraphContainer)) {
+            //var_dump(java_values($paragraph->getText()));
         }
         return $listItem;
     }
@@ -1527,7 +1732,8 @@ class XWPFToHTMLConverter {
      * @param $paragraph
      * @param $key
      */
-    private function processList($numberingInfo, $container, $paragraph, $key){
+    private function processList($numberingInfo, $container, $paragraph, $key)
+    {
 
         //Extract List Properties
         $abstractNum = $this->getAbstractNum($numberingInfo);
@@ -1536,27 +1742,31 @@ class XWPFToHTMLConverter {
         //If this is set to true a new list container should be created
         $newListActivator = false;
 
-        if($this->listNumId != $numberingInfo['numId'] ){
+        if ($this->listNumId != $numberingInfo['numId']) {
             $newListActivator = true;
         }
 
         $levelCount = $numberingInfo['lvl'];
 
         //Check if the list level state has change
-        if($this->listLevelState != $levelCount){
+        if ($this->listLevelState != $levelCount) {
 
             //Create new list
             $newList = new HTMLElement(HTMLElement::UL);
-            $newList->setAttribute('style','list-style-type:'.$listProperties['type']);
+            $newList->setAttribute('style', 'list-style-type:' . $listProperties['type']);
 
             //Get last ul element to add the new list ul container
             $lastContainer = $container->getLastElement();
 
-            for($i=0;$i<$this->listLevelState;$i++){
-                $lastContainer = $lastContainer->getLastElement();
+            for ($i = 0; $i < $this->listLevelState; $i++) {
+                if (is_object($lastContainer->getLastElement())) {
+                    $lastContainer = $lastContainer->getLastElement();
+                } else {
+                    //var_dump($container);
+                }
             }
             //Add new list in the last container
-            if(is_object($lastContainer)) {
+            if (is_object($lastContainer)) {
                 $lastContainer->addInnerElement($newList);
             }
         }
@@ -1570,49 +1780,48 @@ class XWPFToHTMLConverter {
         $listItemHTMLElement->setId($key);
 
         //Check if the container has a last element to avoid non object exception
-        if(is_object($container->getLastElement()) and !$newListActivator){
+        if (is_object($container->getLastElement()) and !$newListActivator) {
 
             //Assign the tag name
             $containerLastElement = $container->getLastElement()->getTagName();
 
-        }elseif($newListActivator){
+        } elseif ($newListActivator) {
 
             //Add another level list
             $containerLastElement = "innerul";
-        }else{
+        } else {
 
             //Set default in case the container has no inner elements
             $containerLastElement = "text";
         }
 
         // Check if the actual container has a list container as last element
-        if( $containerLastElement == "ul"  ){
+        if ($containerLastElement == "ul") {
 
             //Initialize last container
             $lastContainer = $container->getLastElement();
 
             //Find current list element
-            for($i=0;$i<$this->listLevelState;$i++){
+            for ($i = 0; $i < $this->listLevelState; $i++) {
                 $lastContainer = $lastContainer->getLastElement();
             }
 
             //Check if the container is fill
-            if(is_object($lastContainer)) {
+            if (is_object($lastContainer)) {
                 $listItemHTMLElement->setId($key);
                 $lastContainer->addInnerElement($listItemHTMLElement);
             }
 
-        }elseif($containerLastElement == 'innerul' or $containerLastElement != "ul") {
+        } elseif ($containerLastElement == 'innerul' or $containerLastElement != "ul") {
 
             //Create a new list container
             $listContainer = new HTMLElement(HTMLElement::UL);
-            $listContainer->setId($key);
 
             //Set list type style
-            $listContainer->setAttribute('style','list-style-type:'.$listProperties['type'].';'.'margin-left:'.$listProperties['indentation'].'px' );
+            $listContainer->setAttribute('style', 'list-style-type:' . $listProperties['type'] . ';' . 'margin-left:' . $listProperties['indentation'] . 'px');
 
             //Fill the list with the first li item
-            $firstItemId = $key+1;
+            $firstItemId = $key + 1;
             $listItemHTMLElement->setId($firstItemId);
             $listContainer->addInnerElement($listItemHTMLElement);
 
@@ -1627,7 +1836,8 @@ class XWPFToHTMLConverter {
      * @param $numberingInfo
      * @return int
      */
-    public function calculateListIndentation($numXml ,$numberingInfo){
+    public function calculateListIndentation($numXml, $numberingInfo)
+    {
 
         $ipind = $numXml->xpath('wlvl/wpPr/wind');
 
@@ -1635,7 +1845,7 @@ class XWPFToHTMLConverter {
         try {
             $hanging = $ipind[$numberingInfo['lvl']]['whanging'];
             $wleft = $ipind[$numberingInfo['lvl']]['wleft'];
-        }catch (Exception $exception){
+        } catch (Exception $exception) {
             //Setting default
             $hanging = 1;
             $wleft = 1;
@@ -1643,7 +1853,7 @@ class XWPFToHTMLConverter {
         }
 
         //Calculate list indentation
-        $listIndentation = ((intval($wleft) / intval($hanging))/4) * 100;
+        $listIndentation = ((intval($wleft) / intval($hanging)) / 4) * 100;
 
         return intval($listIndentation);
 
@@ -1654,8 +1864,8 @@ class XWPFToHTMLConverter {
      * @param $paragraph
      * @return HTMLElement
      */
-    public  function parseToc($paragraph){
-
+    public function parseToc($paragraph)
+    {
         $this->tocLevel++;
         $this->toc = true;
 
@@ -1668,9 +1878,11 @@ class XWPFToHTMLConverter {
         //Get all the HTML characters in the paragraph
         $tocRow = array();
 
-        for($i=0;$i<count($runs);$i++){
+        for ($i = 0; $i < count($runs); $i++) {
             $character = $runs[$i];
-            $runHTMLElement = $this->parseCharacterRun($character);
+            $run = new XWPFRun($character, $this->mainStyleSheet);
+            $runHTMLElement = $run->parseRun();
+            //$runHTMLElement = $this->parseCharacterRun($character);
             $tocRow[$i] = $runHTMLElement;
         }
 
@@ -1678,24 +1890,28 @@ class XWPFToHTMLConverter {
         $a = 1;
 
         //Find last element
-        while($tocRow[count($runs)-$a]->getInnerText() == "<br />"){
+        while ($tocRow[count($runs) - $a]->getInnerText() == "<br />") {
             $a++;
         }
 
         $a++;
-        $desLevel = count($runs)-$a;
-        $tocPage = $tocRow[$desLevel];
+        $desLevel = count($runs) - $a;
+        if ($desLevel >= 0) {
+            $tocPage = $tocRow[$desLevel];
+        } else {
+            $tocPage = $tocRow[0];
+        }
 
         //Add all the elements of description
         $toc_cell = new HTMLElement(HTMLElement::TD);
         $toc_link = new HTMLElement(HTMLElement::A);
 
-        for($i=1;$i<$desLevel;$i++){
+        for ($i = 1; $i < $desLevel; $i++) {
             $testText = $tocRow[$i]->getInnerText();
-            $valid = strpos($testText,"<");
-            if($valid == false){
-                if(is_a($tocRow[$i],'HTMLElement')) {
-                    if(!empty(trim($tocRow[$i]->getInnerText()))){
+            $valid = strpos($testText, "<");
+            if ($valid == false) {
+                if (is_a($tocRow[$i], 'HTMLElement')) {
+                    if (!empty(trim($tocRow[$i]->getInnerText()))) {
                         $toc_link->addInnerElement($tocRow[$i]);
                     }
                 }
@@ -1703,34 +1919,86 @@ class XWPFToHTMLConverter {
         }
 
         //Apply styles for toc num and toc page number
-        $tocNum->setAttribute('style','margin-right:10px');
-        $toc_link->setAttribute('style','margin-right:10px');
-        $toc_link->setAttribute('style','text-decoration:inherit');
-        $tocPage->setAttribute('style','float:right');
+        $tocNum->setAttribute('style', 'margin-right:10px');
+        $toc_link->setAttribute('style', 'margin-right:10px');
+        $toc_link->setAttribute('style', 'text-decoration:inherit');
+        $tocPage->setAttribute('style', 'float:right');
 
-        //TODO Find the accurate behaviour of this link
         //Set link direction
-        $toc_link->setAttribute('href','#');
+        $link = '#toc'.$this->headlineId;
+        $toc_link->setAttribute('href', $link);
+        $this->headlineId++;
 
         //Add elements to toc cell
         $toc_cell->addInnerElement($tocNum);
         $toc_cell->addInnerElement($toc_link);
         $toc_cell->addInnerElement($tocPage);
 
+        //Get table of contents
+        $needles = array('<strong >','</strong>');
+        $textList = $toc_link->getLastElement();
+
+        if(is_a($textList, 'HTMLElement')) {
+            $text = trim(str_replace($needles, "", $textList->getInnerText() ));
+        } else {
+            $text = trim(str_replace($needles, "", $textList));
+        }
+        $textNum = trim(str_replace($needles,"",$tocNum->getInnerText()));
+        $textPage = trim(str_replace($needles,"",$tocPage->getInnerText()));
+        $this->tableOfContents[] = array('num' => $textNum, 'description' => $text, 'page' => $textPage);
+
         //Add cell to toc row
         $toc_row->addInnerElement($toc_cell);
 
         //Add row to table or create table if it's the first toc entry
-        if($this->tocLevel == 1){
-            $container =  new HTMLElement(HTMLElement::NAV);
+        if ($this->tocLevel == 1) {
+            $container = new HTMLElement(HTMLElement::NAV);
             $tableContainer = new HTMLElement(HTMLElement::TABLE);
             $tableContainer->addInnerElement($toc_row);
             $container->addInnerElement($tableContainer);
-        }else{
+        } else {
             $container = $toc_row;
         }
 
         return $container;
+    }
+
+    public function getTableOfContents(){
+        return $this->tableOfContents;
+    }
+
+    public function getHeadLineList(){
+        return $this->headLineList;
+    }
+
+    private function printBreakPage($container){
+        $pageBreakBlock = new HTMLElement(HTMLElement::P);
+        $pageBreakBlock->setInnerText(
+            "-----------------------------------------
+            ------------------------------------------
+            ------------------------------------------
+            ----------------PageBreak-----------------
+            ------------------------------------------
+            ----------------------------------
+            -----------------------------------------");
+        $container->addInnerElement($pageBreakBlock);
+    }
+
+    private function pageBreak($container){
+
+        $this->htmlDocument->setBody($container);
+
+        // Create new page
+        $this->createPage();
+
+        // Create new HTML element and set its class name
+        $container = new HTMLElement(HTMLElement::DIV);
+        $styleClass = new StyleClass();
+        $className = $this->mainStyleSheet->getClassName($styleClass);
+        $container->setClass($className);
+        $this->printBreakPage($container);
+        return $container;
+
     }
 
     /**
@@ -1743,50 +2011,49 @@ class XWPFToHTMLConverter {
     {
         // Check if this is a page break
         if (is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::PAGE_BREAK) {
-
-            $this->htmlDocument->setBody($container);
-
-            // Create new page
-            $this->createPage();
-
-            // Create new HTML element and set its class name
-            $container = new HTMLElement(HTMLElement::DIV);
-            $styleClass = new StyleClass();
-            $className = $this->mainStyleSheet->getClassName($styleClass);
-            $container->setClass($className);
-            return $container;
-
+            $container = $this->pageBreak($container);
         } elseif (is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::CUSTOMLIST) {
-
             $this->setCustomList($container, $key);
-            return $container;
-
         } elseif ($paragraphHTMLElement->getTagName() == "tr") {
 
             //Add Toc to the container
-
             if ($this->tocLevel <= 1) {
                 $nav = new HTMLElement(HTMLElement::NAV);
                 $table = new HTMLElement(HTMLElement::TABLE);
                 $table->addInnerElement($paragraphHTMLElement);
                 $nav->addInnerElement($table);
                 $container->addInnerElement($nav);
-                return $container;
             } else {
                 $lastTable = $container->getLastElement()->getLastElement();
-                if (is_object($lastTable) and is_a($lastTable,'HTMLElement')) {
+                if (is_object($lastTable) and is_a($lastTable, 'HTMLElement')) {
                     $lastTable->addInnerElement($paragraphHTMLElement);
-                    return $container;
                 }
-                return $container;
             }
+        } elseif ($paragraphHTMLElement->getTagName() == "header") {
 
-
-        } else {
-            // Add element to container
+            $headline = $paragraphHTMLElement->getLastElement();
+            if (is_object($headline)) {
+                $tagHeadline = $headline->getTagName();
+                if (!is_int($headline->getInnerText())) {
+                    $this->headLineList[] = array(
+                        'tag' => $tagHeadline,
+                        'content' => trim($headline->getLastElement()->getInnerText())
+                    );
+                }
+                if ($tagHeadline == "h1") {
+                    if (!is_null($headline->getInnerText())) {
+                        $headline->setAttribute('id', "toc" . $this->headlineIdSection);
+                        $this->headlineIdSection++;
+                        $container = $this->pageBreak($container);
+                    }
+                }
+            }
             $container->addInnerElement($paragraphHTMLElement);
-            return $container;
+        } else {
+            $container->addInnerElement($paragraphHTMLElement);
         }
+
+        return $container;
     }
 
     /**
@@ -1823,17 +2090,16 @@ class XWPFToHTMLConverter {
     /**
      * @param $charRuns
      * @param $container
-     * @param $prevCharRunHTMLElement
      */
-    private function parseRuns($charRuns, $container, $prevCharRunHTMLElement)
+    private function parseRuns($charRuns, $container)
     {
+        $prevCharRunHTMLElement = null;
         for ($j = 0; $j < count($charRuns); $j++) {
-
-            // Character run is a simple part of text (of paragraph), every character or word of
-            // character run shares the same style properties within entire character run.
             $characterRun = $charRuns[$j];
             $pictures = java_values($characterRun->getEmbeddedPictures());
-            $charRunHTMLElement = $this->parseCharacterRun($characterRun);
+            //$charRunHTMLElement = $this->parseCharacterRun($characterRun);
+            $run = new XWPFRun($characterRun, $this->mainStyleSheet);
+            $charRunHTMLElement = $run->parseRun();
 
             // Check if this is a picture
             if (count($pictures) > 0) {
@@ -1854,6 +2120,35 @@ class XWPFToHTMLConverter {
                 $prevCharRunHTMLElement = clone $charRunHTMLElement;
             }
 
+        }
+    }
+
+    /**
+     * @param $characterRun
+     * @param $charXml
+     */
+    private function checkSectionNumbering($characterRun, $charXml)
+    {
+        if (strpos($charXml, '<w:instrText xml:space="preserve">PAGEREF') !== false) {
+
+            //Trim the xml REF
+            $start = strpos($charXml, '_Toc');
+            $end = strpos($charXml, '\h');
+            $lenght = $end - $start;
+
+            $tocRef = trim(substr($charXml, $start, $lenght));
+
+            //Calculate index value
+            $textParagraph = java_values($characterRun->getParagraph()->getText());
+            $indexValue = str_split(substr($textParagraph, 0, 3));
+            $value = '';
+            foreach ($indexValue as $char) {
+                if (is_numeric($char) and !empty($char) or $char == ".") $value .= $char;
+            }
+
+            if (!$value == "") {
+                $this->tocNumbering[$tocRef] = $value;
+            }
         }
     }
 
