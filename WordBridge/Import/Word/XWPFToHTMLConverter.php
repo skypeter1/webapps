@@ -16,6 +16,7 @@ include_once "XWPF/XWPFTable.php";
 include_once "XWPF/XWPFSDTCell.php";
 include_once "XWPF/XWPFList.php";
 include_once "XWPF/XWPFParagraph.php";
+include_once "XWPF/TableOfContents.php";
 
 
 /**
@@ -97,6 +98,7 @@ class XWPFToHTMLConverter
     private $tocNumbering;
     private $hasTOC;
     private $tableOfContents;
+    private $documentXml;
 
     /**
      * XWPF Document Information
@@ -305,20 +307,35 @@ class XWPFToHTMLConverter
         }
 
         $document = new Java("org.apache.poi.xwpf.usermodel.XWPFDocument", $input);
-        //var_dump(java_values($document->getDocument()->toString()));
-        //var_dump(java_values($document->getDocument()->getBody()->getSectPr()->getPgSz()->getW()->doubleValue()->toString()));
-        $pageSize = java_values($document->getDocument()->getBody()->getSectPr()->getPgSz());
-        $pageHeight = java_values($pageSize->getH()->doubleValue()->toString());
-        $pageWidht =  java_values($pageSize->getW()->doubleValue()->toString());
+//        $this->documentXml = $this->getXMLDocument($document);
+//        $valueTest = $this->documentXml->xpath("wbody/wsdt");
+//        var_dump($valueTest);
+//        var_dump(java_values($document->getDocument()->toString()));
+//            w:sdt
+//        var_dump(java_values($document->getDocument()->getBody()->getSectPr()->getPgSz()->getW()->doubleValue()->toString()));
+//        $pageSize = java_values($-document->getDocument()->getBody()->getSectPr()->getPgSz());
+//        $pageHeight = java_values($pageSize->getH()->doubleValue()->toString());
+//        $pageWidht =  java_values($pageSize->getW()->doubleValue()->toString());
 //        var_dump((int) $pageHeight / 20);
 //        var_dump((int) $pageWidht / 20);
-
 
         if (is_null($document)) {
             throw new Exception('[XWPFToHTMLConverter::loadDocx] POI XWPFDocument Internal Error');
         }
 
         return $document;
+    }
+
+    /**
+     * @return SimpleXMLElement
+     */
+    private function getXMLDocument($document)
+    {
+        $strDocument =  java_values($document->getDocument()->toString());
+        $charXml = str_replace('w:', 'w', $strDocument);
+        $runXml = new SimpleXMLElement($charXml);
+
+        return $runXml;
     }
 
     /**
@@ -488,25 +505,16 @@ class XWPFToHTMLConverter
         //Set current processed part
         $this->currentProcessedPart = "BODY";
 
+        $tocNumber = 0;
+
         // Every Word document section consists of paragraphs, so we iterate through them, and parse them one by one
         foreach ($elements as $key => $element) {
 
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
-
                 $table = new XWPFTable($element,$key,$this->mainStyleSheet);
                 $tableElement = $table->parseTable();
                 $container->addInnerElement($tableElement);
-
-//                // Get table out of element
-//                $tableHead = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFTable');
-//
-//                // Parse table
-//                $tableElement = $this->parseTable($tableHead, $key);
-//
-//                //Add table to the
-//                $container->addInnerElement($tableElement);
-
             }
 
             // Check if element is a paragraph
@@ -534,20 +542,21 @@ class XWPFToHTMLConverter
 
                     // Parse paragraph
                     $paragraphHTMLElement = $this->parseParagraph($paragraph, $key);
-//                    $XWPFparagraph = new XWPFParagraph($paragraph, $this->mainStyleSheet);
-//                    $XWPFparagraph->setId($key);
-//                    $paragraphHTMLElement = $XWPFparagraph->parseParagraph();
-//                      var_dump($parContainer);
-
-
                     $container = $this->processContainer($paragraphHTMLElement, $container, $key);
-
-
                 }
 
             }
             // Adjust progress step
             //$this->_progress->incrementStep();
+
+            $elementType = java_values($element->getElementType()->toString());
+            if($elementType == "CONTENTCONTROL"){
+                $tableOfContents = new TableOfContents($element);
+                $tocContainer = $tableOfContents->processToc($tocNumber);
+                $container->addInnerElement($tocContainer);
+                $tocNumber++;
+            }
+
         }
 
         // Add container to inner body
@@ -775,241 +784,241 @@ class XWPFToHTMLConverter
         //return $listItemStyleContainer;
     }
 
-    /**
-     * Parse Word table
-     * @static var   int Unique ID
-     * @param       object  Table
-     * @param       string  Element key
-     * @return      HTMLElement
-     */
-    private function parseTable($table, $parIterator)
-    {
-        // Set initial unique id for element
-        static $uniqueId = 10000;
-
-        // Create new HTML table element
-        $container = new HTMLElement(HTMLElement::TABLE);
-
-        //Get Styles
-        $this->styles = $this->document->getStyles();
-
-        // Create new table style class
-        $tableStyleClass = new StyleClass();
-
-        // Check if table has style ID assigned
-        if (java_values($table->getStyleID()) != null) {
-
-            // Get style name
-            $style = $this->styles->getStyle($table->getStyleID());
-            //$style_name = java_values($style->getName());
-
-            // Apply style to table style class
-            $styleXML = java_values($style->getCTStyle()->toString());
-            $tableStyleClass = $this->processStyle($tableStyleClass, $styleXML);
-
-            // Get XML out of XML style
-            $tmpStyleXML = str_replace('w:', 'w', $styleXML);
-            $xml = new SimpleXMLElement($tmpStyleXML);
-        }
-
-        // Get horizontal border attributes (color, size, space)
-        $inHBsz = java_values($table->getInsideHBorderSize());
-        $inHBsp = java_values($table->getInsideHBorderSpace());
-
-        //Set default borders
-        if (!java_is_null($table->getInsideHBorderColor())) {
-            $inHBc = java_values($table->getInsideHBorderColor());
-        } else {
-            $inHBc = '00000A';
-        }
-
-        // Get horizontal border attributes (type)
-        if (!java_is_null($table->getInsideHBorderType())) {
-            $inHBtp = java_values($table->getInsideHBorderType()->name());
-        } else {
-            $inHBtp = 'SINGLE';
-        }
-
-        // Get vertical border attributes (color, size, space)
-        $inHVBsz = java_values($table->getInsideVBorderSize());
-        $inVBsp = java_values($table->getInsideVBorderSpace());
-
-        if (!java_is_null($table->getInsideHBorderColor())) {
-            $inVBc = java_values($table->getInsideHBorderColor());
-        } else {
-            $inVBc = '00000A';
-        }
-
-        // Get vertical border attributes (type)
-        if (!java_is_null($table->getInsideVBorderType())) {
-            $inVBtp = java_values($table->getInsideVBorderType()->name());
-        } else {
-            $inVBtp = 'SINGLE';
-        }
-
-        //Set default borders to header tables
-        if ($this->currentProcessedPart == "HEADER") {
-            $inVBc = 'C0C0C0';
-            $inHBc = 'C0C0C0';
-        }
-
-        // Set border attributes
-        $tableStyleClass->setAttribute("border-collapse", "inherit");
-        $tableStyleClass->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
-        $tableStyleClass->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
-        $tableStyleClass->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
-        $tableStyleClass->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
-
-        // Preset default width of the table to 100%
-        $tableStyleClass->setAttribute("width", "100%");
-
-        // Get rows and iterate through them
-        $rows = java_values($table->getRows());
-
-        foreach ($rows as $rowKey => $row) {
-
-            // Create new row tag
-            $rowTag = new HTMLElement(HTMLElement::TR);
-            $rowXmlStr = java_values($row->getCtRow()->toString());
-            $tmpRowXmlStr = str_replace('w:', 'w', $rowXmlStr);
-            $rowXml = new SimpleXMLElement($tmpRowXmlStr);
-
-            // Get row height
-            $height = $rowXml->xpath('wtrPr/wtrHeight');
-            $height = (isset($height[0]['wval'])) ? round(intval($height[0]['wval']) / 15.1) . 'px' : 'auto';
-
-            // Set style attributes on the row
-            $trStyle = new StyleClass();
-            $trStyle->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
-            $trStyle->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
-            $trStyle->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
-            $trStyle->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
-            $trStyle->setAttribute("height", $height);
-
-            // Set class on the row
-            $cnm = $this->mainStyleSheet->getClassName($trStyle);
-            $rowTag->setClass($cnm);
-
-            // Get and iterate through the row cells
-            $cells = java_values($row->getTableICells());
-            foreach ($cells as $cellKey => $cell) {
-
-                if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))) {
-                    // Create new cell tag
-                    $cellTag = new HTMLElement(HTMLElement::TD);
-                    $xmlstr = java_values($cell->getCTTc()->toString());
-                    $xmlstr = str_replace('w:', 'w', $xmlstr);
-                    $xml = new SimpleXMLElement($xmlstr);
-
-                    // Create cell attributes
-                    $cellDescribers = array();
-                    if ($rowKey == 0) $cellDescribers[] = 'firstRow';
-                    if ($rowKey == count($rows) - 1) $cellDescribers[] = 'lastRow';
-                    if ($cellKey == 0) $cellDescribers[] = 'firstCol';
-                    if ($cellKey == count($cells) - 1) $cellDescribers[] = 'lastCol';
-                    if ($cellKey % 2 == 0) $cellDescribers[] = 'band1Vert';
-                    if ($cellKey % 2 == 1) $cellDescribers[] = 'band2Vert';
-                    if ($rowKey % 2 == 0) $cellDescribers[] = 'band1Horz';
-                    if ($rowKey % 2 == 1) $cellDescribers[] = 'band2Horz';
-                    if ($rowKey == 0 && $cellKey == count($cells) - 1) $cellDescribers[] = 'neCell';
-                    if ($rowKey == 0 && $cellKey == 0) $cellDescribers[] = 'nwCell';
-                    if ($rowKey == count($rows) - 1 && $cellKey == count($cells) - 1) $cellDescribers[] = 'seCell';
-                    if ($rowKey == 0 && $cellKey == 0) $cellDescribers[] = 'swCell ';
-
-                    // Set cell attributes
-                    $tdStyle = new StyleClass();
-
-                    // Set colspan
-                    $gridspan = $xml->xpath('*/wgridSpan');
-                    if ($gridspan) {
-                        $gridspan = ((string)$gridspan[0]['wval']);
-                        $cellTag->setAttribute('colspan', $gridspan);
-                    }
-
-                    // Set cell width
-                    $cellwidth = $xml->xpath('*/wtcW');
-                    if ($cellwidth) {
-                        $cellwidth = ((string)$cellwidth[0]['ww']);
-                        $cellwidth = round($cellwidth / 15.1);
-                        $tdStyle->setAttribute('width', $cellwidth . 'px');
-                    }
-
-                    // Set cell background color
-                    $color = java_values($cell->getColor());
-                    if ($color) {
-                        $tdStyle->setAttribute("background-color", "#" . "$color");
-                    }
-
-                    // Set border type
-
-                    if ($inVBc == 'auto') $inVBc = '000000';
-                    if ($inHBc == 'auto') $inHBc = '000000';
-                    if ($this->currentProcessedPart == "HEADER") {
-                        $inVBc = 'auto';
-                        $inHBc = 'auto';
-                    }
-                    if ($inVBc > '') {
-                        $tdStyle->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
-                        $tdStyle->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
-                        $tdStyle->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
-                        $tdStyle->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
-                    }
-
-                    // Set class on the cell
-                    $cnm = $this->mainStyleSheet->getClassName($tdStyle);
-                    $cellTag->setClass($cnm);
-
-                    // Get cell text
-                    //$text = java_values($cell->getText());
-
-                    // Get and iterate through cell paragraphs
-                    $paragraphs = java_values($cell->getParagraphs());
-                    foreach ($paragraphs as $key => $paragraph) {
-
-                        // Adjust unique ID for paragraph
-                        $uniqueId++;
-
-                        // Parse paragraph
-                        $paragraphHTMLElement = $this->parseParagraph($paragraph, $uniqueId);
-
-                        // Set cell margins on temp style
-                        $tmpStyle = new StyleClass();
-
-                        // Apply margins to paragraph
-                        $className = $this->mainStyleSheet->getClassName($tmpStyle);
-
-                        if (is_object($paragraphHTMLElement)) {
-                            $paragraphHTMLElement->setClass($paragraphHTMLElement->getClass() . ' ' . $className);
-                            // Add paragraph to cell tag
-                            $cellTag->addInnerElement($paragraphHTMLElement);
-                        } else {
-                            CakeLog::debug('[XWPFToHTMLConverter::parseTable] Empty HTML Element on' . java_values($paragraph->getText()));
-                        }
-
-                    }
-
-                    // Add cell tag to row
-                    $rowTag->addInnerElement($cellTag);
-                }
-
-                if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFSDTCell'))) {
-                    $rowXml = java_values($row->getCtRow()->ToString());
-                    $xwpfSdtCell = new XWPFSDTCell($cell, $rowXml);
-                    $container = $xwpfSdtCell->parseSDTCell();
-                }
-            }
-
-            // Add row to the container
-            $container->addInnerElement($rowTag);
-        }
-
-        // Get and set class name on container
-        $className = $this->mainStyleSheet->getClassName($tableStyleClass);
-        $container->setClass($className);
-
-        // Return container
-        return $container;
-    }
+//    /**
+//     * Parse Word table
+//     * @static var   int Unique ID
+//     * @param       object  Table
+//     * @param       string  Element key
+//     * @return      HTMLElement
+//     */
+//    private function parseTable($table, $parIterator)
+//    {
+//        // Set initial unique id for element
+//        static $uniqueId = 10000;
+//
+//        // Create new HTML table element
+//        $container = new HTMLElement(HTMLElement::TABLE);
+//
+//        //Get Styles
+//        $this->styles = $this->document->getStyles();
+//
+//        // Create new table style class
+//        $tableStyleClass = new StyleClass();
+//
+//        // Check if table has style ID assigned
+//        if (java_values($table->getStyleID()) != null) {
+//
+//            // Get style name
+//            $style = $this->styles->getStyle($table->getStyleID());
+//            //$style_name = java_values($style->getName());
+//
+//            // Apply style to table style class
+//            $styleXML = java_values($style->getCTStyle()->toString());
+//            $tableStyleClass = $this->processStyle($tableStyleClass, $styleXML);
+//
+//            // Get XML out of XML style
+//            $tmpStyleXML = str_replace('w:', 'w', $styleXML);
+//            $xml = new SimpleXMLElement($tmpStyleXML);
+//        }
+//
+//        // Get horizontal border attributes (color, size, space)
+//        $inHBsz = java_values($table->getInsideHBorderSize());
+//        $inHBsp = java_values($table->getInsideHBorderSpace());
+//
+//        //Set default borders
+//        if (!java_is_null($table->getInsideHBorderColor())) {
+//            $inHBc = java_values($table->getInsideHBorderColor());
+//        } else {
+//            $inHBc = '00000A';
+//        }
+//
+//        // Get horizontal border attributes (type)
+//        if (!java_is_null($table->getInsideHBorderType())) {
+//            $inHBtp = java_values($table->getInsideHBorderType()->name());
+//        } else {
+//            $inHBtp = 'SINGLE';
+//        }
+//
+//        // Get vertical border attributes (color, size, space)
+//        $inHVBsz = java_values($table->getInsideVBorderSize());
+//        $inVBsp = java_values($table->getInsideVBorderSpace());
+//
+//        if (!java_is_null($table->getInsideHBorderColor())) {
+//            $inVBc = java_values($table->getInsideHBorderColor());
+//        } else {
+//            $inVBc = '00000A';
+//        }
+//
+//        // Get vertical border attributes (type)
+//        if (!java_is_null($table->getInsideVBorderType())) {
+//            $inVBtp = java_values($table->getInsideVBorderType()->name());
+//        } else {
+//            $inVBtp = 'SINGLE';
+//        }
+//
+//        //Set default borders to header tables
+//        if ($this->currentProcessedPart == "HEADER") {
+//            $inVBc = 'C0C0C0';
+//            $inHBc = 'C0C0C0';
+//        }
+//
+//        // Set border attributes
+//        $tableStyleClass->setAttribute("border-collapse", "inherit");
+//        $tableStyleClass->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+//        $tableStyleClass->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+//        $tableStyleClass->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+//        $tableStyleClass->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+//
+//        // Preset default width of the table to 100%
+//        $tableStyleClass->setAttribute("width", "100%");
+//
+//        // Get rows and iterate through them
+//        $rows = java_values($table->getRows());
+//
+//        foreach ($rows as $rowKey => $row) {
+//
+//            // Create new row tag
+//            $rowTag = new HTMLElement(HTMLElement::TR);
+//            $rowXmlStr = java_values($row->getCtRow()->toString());
+//            $tmpRowXmlStr = str_replace('w:', 'w', $rowXmlStr);
+//            $rowXml = new SimpleXMLElement($tmpRowXmlStr);
+//
+//            // Get row height
+//            $height = $rowXml->xpath('wtrPr/wtrHeight');
+//            $height = (isset($height[0]['wval'])) ? round(intval($height[0]['wval']) / 15.1) . 'px' : 'auto';
+//
+//            // Set style attributes on the row
+//            $trStyle = new StyleClass();
+//            $trStyle->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+//            $trStyle->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+//            $trStyle->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+//            $trStyle->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+//            $trStyle->setAttribute("height", $height);
+//
+//            // Set class on the row
+//            $cnm = $this->mainStyleSheet->getClassName($trStyle);
+//            $rowTag->setClass($cnm);
+//
+//            // Get and iterate through the row cells
+//            $cells = java_values($row->getTableICells());
+//            foreach ($cells as $cellKey => $cell) {
+//
+//                if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))) {
+//                    // Create new cell tag
+//                    $cellTag = new HTMLElement(HTMLElement::TD);
+//                    $xmlstr = java_values($cell->getCTTc()->toString());
+//                    $xmlstr = str_replace('w:', 'w', $xmlstr);
+//                    $xml = new SimpleXMLElement($xmlstr);
+//
+//                    // Create cell attributes
+//                    $cellDescribers = array();
+//                    if ($rowKey == 0) $cellDescribers[] = 'firstRow';
+//                    if ($rowKey == count($rows) - 1) $cellDescribers[] = 'lastRow';
+//                    if ($cellKey == 0) $cellDescribers[] = 'firstCol';
+//                    if ($cellKey == count($cells) - 1) $cellDescribers[] = 'lastCol';
+//                    if ($cellKey % 2 == 0) $cellDescribers[] = 'band1Vert';
+//                    if ($cellKey % 2 == 1) $cellDescribers[] = 'band2Vert';
+//                    if ($rowKey % 2 == 0) $cellDescribers[] = 'band1Horz';
+//                    if ($rowKey % 2 == 1) $cellDescribers[] = 'band2Horz';
+//                    if ($rowKey == 0 && $cellKey == count($cells) - 1) $cellDescribers[] = 'neCell';
+//                    if ($rowKey == 0 && $cellKey == 0) $cellDescribers[] = 'nwCell';
+//                    if ($rowKey == count($rows) - 1 && $cellKey == count($cells) - 1) $cellDescribers[] = 'seCell';
+//                    if ($rowKey == 0 && $cellKey == 0) $cellDescribers[] = 'swCell ';
+//
+//                    // Set cell attributes
+//                    $tdStyle = new StyleClass();
+//
+//                    // Set colspan
+//                    $gridspan = $xml->xpath('*/wgridSpan');
+//                    if ($gridspan) {
+//                        $gridspan = ((string)$gridspan[0]['wval']);
+//                        $cellTag->setAttribute('colspan', $gridspan);
+//                    }
+//
+//                    // Set cell width
+//                    $cellwidth = $xml->xpath('*/wtcW');
+//                    if ($cellwidth) {
+//                        $cellwidth = ((string)$cellwidth[0]['ww']);
+//                        $cellwidth = round($cellwidth / 15.1);
+//                        $tdStyle->setAttribute('width', $cellwidth . 'px');
+//                    }
+//
+//                    // Set cell background color
+//                    $color = java_values($cell->getColor());
+//                    if ($color) {
+//                        $tdStyle->setAttribute("background-color", "#" . "$color");
+//                    }
+//
+//                    // Set border type
+//
+//                    if ($inVBc == 'auto') $inVBc = '000000';
+//                    if ($inHBc == 'auto') $inHBc = '000000';
+//                    if ($this->currentProcessedPart == "HEADER") {
+//                        $inVBc = 'auto';
+//                        $inHBc = 'auto';
+//                    }
+//                    if ($inVBc > '') {
+//                        $tdStyle->setAttribute("border-left", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+//                        $tdStyle->setAttribute("border-right", "1px " . HWPFWrapper::getBorder($inVBtp) . " #$inVBc");
+//                        $tdStyle->setAttribute("border-top", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+//                        $tdStyle->setAttribute("border-bottom", "1px " . HWPFWrapper::getBorder($inHBtp) . " #$inHBc");
+//                    }
+//
+//                    // Set class on the cell
+//                    $cnm = $this->mainStyleSheet->getClassName($tdStyle);
+//                    $cellTag->setClass($cnm);
+//
+//                    // Get cell text
+//                    //$text = java_values($cell->getText());
+//
+//                    // Get and iterate through cell paragraphs
+//                    $paragraphs = java_values($cell->getParagraphs());
+//                    foreach ($paragraphs as $key => $paragraph) {
+//
+//                        // Adjust unique ID for paragraph
+//                        $uniqueId++;
+//
+//                        // Parse paragraph
+//                        $paragraphHTMLElement = $this->parseParagraph($paragraph, $uniqueId);
+//
+//                        // Set cell margins on temp style
+//                        $tmpStyle = new StyleClass();
+//
+//                        // Apply margins to paragraph
+//                        $className = $this->mainStyleSheet->getClassName($tmpStyle);
+//
+//                        if (is_object($paragraphHTMLElement)) {
+//                            $paragraphHTMLElement->setClass($paragraphHTMLElement->getClass() . ' ' . $className);
+//                            // Add paragraph to cell tag
+//                            $cellTag->addInnerElement($paragraphHTMLElement);
+//                        } else {
+//                            CakeLog::debug('[XWPFToHTMLConverter::parseTable] Empty HTML Element on' . java_values($paragraph->getText()));
+//                        }
+//
+//                    }
+//
+//                    // Add cell tag to row
+//                    $rowTag->addInnerElement($cellTag);
+//                }
+//
+//                if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFSDTCell'))) {
+//                    $rowXml = java_values($row->getCtRow()->ToString());
+//                    $xwpfSdtCell = new XWPFSDTCell($cell, $rowXml);
+//                    $container = $xwpfSdtCell->parseSDTCell();
+//                }
+//            }
+//
+//            // Add row to the container
+//            $container->addInnerElement($rowTag);
+//        }
+//
+//        // Get and set class name on container
+//        $className = $this->mainStyleSheet->getClassName($tableStyleClass);
+//        $container->setClass($className);
+//
+//        // Return container
+//        return $container;
+//    }
 
 
     /**
@@ -1028,7 +1037,7 @@ class XWPFToHTMLConverter
         $this->styles = $this->document->getStyles();
 
         // Get character runs
-        $charRuns = java_values($paragraph->getRuns());
+        $charRuns = java_values($paragraph->getIRuns());
 
         //Check paragraph numbering
         $numberingInfo = $this->paragraphExtractNumbering($paragraph);
@@ -1283,7 +1292,9 @@ class XWPFToHTMLConverter
         $pictures = java_values($characterRun->getEmbeddedPictures());
         if (count($pictures) > 0) {
             foreach ($pictures as $key => $picture) {
-                $container = $this->processPicture($picture);
+                $path = XWPFToHTMLConverter::getDirectoryPath();
+                $pictureContainer = new XWPFPicture($picture, $this->mainStyleSheet, $path);
+                $container = $pictureContainer->processPicture();
                 return $container;
             }
         }
@@ -1345,6 +1356,7 @@ class XWPFToHTMLConverter
 
         //TODO check why this fails with large documents
         //if($container->getTagName() == '') $container->setInnerElement($text);
+
         if ($boldContainer and $italicContainer) {
 
             //Set Bold and italic semantic tags
@@ -1563,117 +1575,6 @@ class XWPFToHTMLConverter
         return $styleClass;
     }
 
-    private function returnUnssuportedImageMessage($name)
-    {
-        $messageBox = new HTMLElement(HTMLElement::DIV);
-        $boxStyleClass = new StyleClass();
-
-        $messageText = "This image could not be imported. It's not supported format.";
-        $messageParagraph = new HTMLElement(HTMLElement::P);
-        $messageParagraph->setInnerText($messageText);
-        $messageParagraph->setAttribute('style', "font-weight: bold");
-        $messageBox->addInnerElement($messageParagraph);
-
-        $imageName = (string)$name;
-        $nameParagraph = new HTMLElement(HTMLElement::P);
-        $nameParagraph->setInnerText($imageName);
-        $messageBox->addInnerElement($nameParagraph);
-
-        $boxStyleClass->setAttribute('width', '75%');
-        $boxStyleClass->setAttribute('margin', '0 auto');
-        $boxStyleClass->setAttribute('background-color', '#ffcfba');
-        $boxStyleClass->setAttribute('color', '#d91c24');
-        $boxStyleClass->setAttribute('font-size', '14px');
-        $boxStyleClass->setAttribute('font-family', 'Roboto, sans-serif');
-        $boxStyleClass->setAttribute('padding-bottom', '25px');
-        $boxStyleClass->setAttribute('padding-top', '25px');
-        $boxStyleClass->setAttribute('padding-right', '25px');
-        $boxStyleClass->setAttribute('padding-left', '25px');
-        $boxStyleClass->setAttribute('text-align', 'center');
-
-        $className = $this->mainStyleSheet->getClassName($boxStyleClass);
-        $messageBox->setClass($className);
-
-        return $messageBox;
-    }
-
-    /**
-     * Parses a picture element of HWPF document
-     * @param   object    Picture
-     * @return  HTMLElement
-     */
-    private function processPicture($picture)
-    {
-        // Get picture data
-        $pictureData = $picture->getPictureData();
-        $picContent = java_values($pictureData->getData());
-        $picName = java_values($pictureData->getFileName());
-        $picExtension = java_values($pictureData->suggestFileExtension());
-
-        if (array_key_exists($picExtension, $this->unsupportedImageFormats)) {
-            $message = $this->returnUnssuportedImageMessage($picName);
-            return $message;
-        }
-
-        // Get picture dimensions
-        $ct_xml = java_values($picture->getCTPicture()->toString());
-        $xml = new SimpleXMLElement($ct_xml);
-        $picExt = $xml->xpath('/xml-fragment/pic:spPr/a:xfrm/a:ext');
-        $picExt = $picExt[0];
-        $cx = $picExt['cx'];
-        $cy = $picExt['cy'];
-        $widthInch = round(intval($cx) / HWPFWrapper::EMUS_PER_INCH, 4);
-        $heightInch = round(intval($cy) / HWPFWrapper::EMUS_PER_INCH, 4);
-
-        // Set ALT data
-        $alt = '';
-        if (isset($this->images_data[$this->images_currentIndex])) {
-            $imageData = $this->images_data[$this->images_currentIndex];
-            if (strlen($imageData['title']) > 0) {
-                $alt = $imageData['title'];
-                if (strlen($imageData['descr']) > 0) {
-                    $alt .= ': ' . $imageData['descr'];
-                }
-            } else if (strlen($imageData['descr']) > 0) {
-                $alt = $imageData['descr'];
-            }
-        }
-
-        // Adjust current image index
-        $this->images_currentIndex++;
-
-        // Create path to image
-        $path = $this->_tmp_path . '/images/' . $picName;
-        $dirname = dirname($path);
-        if (!is_dir($dirname)) {
-            mkdir($dirname, 0775, true);
-        }
-
-        // Store picture in a tmp dir
-        $fp = fopen($path, 'w');
-        fwrite($fp, $picContent);
-        fclose($fp);
-        $this->images[$picName] = $picName;
-
-        // Create fake ID
-        $fakeId = strtolower(str_replace(' ', '', $picName)) . '_' . $this->images_currentIndex;
-
-        // Creating img element with path to newly created picture
-        $imageContainer = new HTMLElement(HTMLElement::IMG);
-        $imageContainer->setAttribute("style", "width: {$widthInch}in; height: {$heightInch}in; display: initial");
-        $imageContainer->setAttribute("src", '../images/' . $picName);
-        $imageContainer->setAttribute("data-ch-file-id", "{$picName}");
-        $imageContainer->setAttribute("alt", $alt);
-        $imageContainer->setAttribute("title", $alt);
-        $imageContainer->setAttribute("id", 'image_' . $fakeId);
-
-        //Add Special markup
-        $container = new HTMLElement(HTMLElement::FIGURE);
-        $container->addInnerElement($imageContainer);
-
-        // Return image container
-        return $container;
-    }
 
     /**
      * Get HTMLDocument
@@ -2094,33 +1995,38 @@ class XWPFToHTMLConverter
     private function parseRuns($charRuns, $container)
     {
         $prevCharRunHTMLElement = null;
-        for ($j = 0; $j < count($charRuns); $j++) {
-            $characterRun = $charRuns[$j];
-            $pictures = java_values($characterRun->getEmbeddedPictures());
-            //$charRunHTMLElement = $this->parseCharacterRun($characterRun);
-            $run = new XWPFRun($characterRun, $this->mainStyleSheet);
-            $charRunHTMLElement = $run->parseRun();
+       // for ($j = 0; $j < count($charRuns); $j++) {
+        foreach($charRuns as $charRun) {
+            if (java_instanceof($charRun, java('org.apache.poi.xwpf.usermodel.XWPFRun'))) {
+                $characterRun = $charRun;
+                $pictures = java_values($characterRun->getEmbeddedPictures());
+                //$charRunHTMLElement = $this->parseCharacterRun($characterRun);
+                $run = new XWPFRun($characterRun, $this->mainStyleSheet);
+                $charRunHTMLElement = $run->parseRun();
 
-            // Check if this is a picture
-            if (count($pictures) > 0) {
+                // Check if this is a picture
+                if (count($pictures) > 0) {
 
-                $container->addInnerElement($charRunHTMLElement);
-                $prevCharRunHTMLElement = clone $charRunHTMLElement;
+                    $container->addInnerElement($charRunHTMLElement);
+                    $prevCharRunHTMLElement = clone $charRunHTMLElement;
 
-                // This part is needed in order to merge similar SPAN tags in one, if they have same
-                // style (this will also prevent unneeded spaces)
-            } else if (@isset($prevCharRunHTMLElement) && $charRunHTMLElement->getClass() == $prevCharRunHTMLElement->getClass()) {
+                    // This part is needed in order to merge similar SPAN tags in one, if they have same
+                    // style (this will also prevent unneeded spaces)
+                } else if (@isset($prevCharRunHTMLElement) && $charRunHTMLElement->getClass() == $prevCharRunHTMLElement->getClass()) {
 
-                $container->getLastElement()->addInnerText($charRunHTMLElement->getInnerText());
+                    $container->getLastElement()->addInnerText($charRunHTMLElement->getInnerText());
 
-                // The rest of elements
+                    // The rest of elements
+                } else {
+
+                    $container->addInnerElement($charRunHTMLElement);
+                    $prevCharRunHTMLElement = clone $charRunHTMLElement;
+                }
             } else {
-
-                $container->addInnerElement($charRunHTMLElement);
-                $prevCharRunHTMLElement = clone $charRunHTMLElement;
+                var_dump($charRun);
             }
-
         }
+
     }
 
     /**
