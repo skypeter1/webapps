@@ -17,6 +17,8 @@ include_once "XWPF/XWPFSDTCell.php";
 include_once "XWPF/XWPFList.php";
 include_once "XWPF/XWPFParagraph.php";
 include_once "XWPF/TableOfContents.php";
+include_once "XWPF/Shapes/ShapeCreator.php";
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/Helpers/ListHelper.php';
 
 
 /**
@@ -110,6 +112,10 @@ class XWPFToHTMLConverter
      * Set default page break
      */
     const PAGE_BREAK = -1;
+    public static $defaultPageBreak;
+    public static $breakH1;
+    public static $breakH2;
+    public static $manualPageBreak;
 
     /**
      * Body Part
@@ -184,6 +190,9 @@ class XWPFToHTMLConverter
         $this->_tmp_path = $tmp_path;
         self::$imagesPath = $tmp_path;
 
+        //Set default pageBreak
+        self::$defaultPageBreak = false;
+
         $this->_progress = $progress;
 
         // Start progress
@@ -224,6 +233,15 @@ class XWPFToHTMLConverter
         $this->localJava = $local;
         // Adjust progress step
         //$this->_progress->incrementStep();
+    }
+
+    public static function setPageBreaks($breakPageH1, $breakPageH2)
+    {
+        if (is_bool($breakPageH1) && is_bool($breakPageH2)) {
+            self::$breakH1 = $breakPageH1;
+            self::$breakH2 = $breakPageH2;
+            self::$manualPageBreak = ($breakPageH1 == false && $breakPageH2 == false) ? true : false;
+        }
     }
 
     public static function getDirectoryPath(){
@@ -477,8 +495,17 @@ class XWPFToHTMLConverter
             $footer = java_values($this->document->getFooterArray($i));
             $this->footers[] = $footer;
         }
+    }
 
-
+    /**
+     * Return the current type of element from the document
+     * Posible values are PARAGRAPH,TABLE and CONTENTCONTROL
+     * @param $element
+     * @return mixed
+     */
+    private function getElementType($element){
+        $elementType = java_values($element->getElementType()->toString());
+        return $elementType;
     }
 
     /**
@@ -510,6 +537,8 @@ class XWPFToHTMLConverter
         // Every Word document section consists of paragraphs, so we iterate through them, and parse them one by one
         foreach ($elements as $key => $element) {
 
+            $elementType = $this->getElementType($element);
+
             // Check if element is a table
             if (java_instanceof($element, java('org.apache.poi.xwpf.usermodel.XWPFTable'))) {
                 $table = new XWPFTable($element,$key,$this->mainStyleSheet);
@@ -523,33 +552,21 @@ class XWPFToHTMLConverter
                 // Get paragraph out of element
                 $paragraph = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFParagraph');
 
-                //$beforeProcess = $this->inspectParagraph($paragraph, $container ,$key);
-
-                if ($this->checkLastRenderedPage($paragraph)) {
-                    //echo "page:".$this->pageCounter."<br/>";
-                    //  $container->addInnerElement($this->auxContainer[0]);
-                    //  $container->addInnerElement($this->auxContainer[1]);
-                }
-
-                //Check if the element is a list
-                $numberingInfo = $this->paragraphExtractNumbering($paragraph);
-
+                $numberingInfo = ListHelper::paragraphExtractNumbering($paragraph);
                 if ($numberingInfo) {
-
-                    $this->processList($numberingInfo, $container, $paragraph, $key);
-
+//                    var_dump(java_values($paragraph->getCTP()->toString()));
+                    $xwpfList = new XWPFList($paragraph,$this->mainStyleSheet,$key);
+                    $xwpfList->parseList($numberingInfo, $container, $paragraph, $this->listNumId, $this->listLevelState);
+                    //$this->processList($numberingInfo, $container, $paragraph, $key);
                 } else {
-
-                    // Parse paragraph
                     $paragraphHTMLElement = $this->parseParagraph($paragraph, $key);
-                    $container = $this->processContainer($paragraphHTMLElement, $container, $key);
+                    $container = $this->processContainer($element, $paragraphHTMLElement, $container, $key);
                 }
-
             }
+
             // Adjust progress step
             //$this->_progress->incrementStep();
 
-            $elementType = java_values($element->getElementType()->toString());
             if($elementType == "CONTENTCONTROL"){
                 $tableOfContents = new TableOfContents($element);
                 $tocContainer = $tableOfContents->processToc($tocNumber);
@@ -660,7 +677,6 @@ class XWPFToHTMLConverter
                 //Add the container to the paragraph
                 $sectionContainer = new HTMLElement(HTMLElement::SPAN);
                 $sectionText = $this->tocNumbering[$mark];
-                //var_dump($sectionText);
                 $this->grandNumbering = $sectionText;
                 $this->firstLevel = 0;
                 $this->secondLevel = 0;
@@ -676,70 +692,53 @@ class XWPFToHTMLConverter
      */
     public function getAbstractNum($numberingInfo)
     {
-
-        //Cast to XWPFNumbering
         $numbering = $this->numbering;
-
-        //Create java big integer object
         $numId = new Java('java.math.BigInteger', $numberingInfo['numId']);
-
-        $abstractNumId = java_values($numbering->getAbstractNumId($numId));
-
-        if (!is_object($abstractNumId)) {
-            return null;
-        }
-
-        //get abstract numbering
-        $absNumId = java_values($abstractNumId->toString());
-
-        //Create java big integer object
-        $finalId = new Java('java.math.BigInteger', $absNumId);
-
-        //get abstract numbering
+        $abstractNumId = java_values($numbering->getAbstractNumId($numId)->toString());
+        $finalId = new Java('java.math.BigInteger', $abstractNumId);
         $abstractNum = java_values($numbering->getAbstractNum($finalId));
 
         return $abstractNum;
-
     }
 
-    /**
-     * @param $abstractNum
-     * @param $numberingInfo
-     * @return array
-     */
-    public function extractListProperties($abstractNum, $numberingInfo)
-    {
-
-        //Check if the object was created
-        if (is_object($abstractNum)) {
-
-            //get xml structure
-            $stringNumbering = java_values($abstractNum->getCTAbstractNum()->ToString());
-            $numberingXml = str_replace('w:', 'w', $stringNumbering);
-            $numXml = new SimpleXMLElement($numberingXml);
-            $ilvl = $numXml->xpath('wlvl/wnumFmt');
-            $ilvlSymbol = $numXml->xpath('wlvl/wlvlText');
-            $listSymbol = $ilvlSymbol[$numberingInfo['lvl']]["wval"];
-
-            //Calculate list indentation
-            $listIndentation = $this->calculateListIndentation($numXml, $numberingInfo);
-
-            //check if the list type exist and get style rule
-            if (is_array($ilvl)) {
-                $enc = utf8_encode($listSymbol);
-                $listType = utf8_encode($ilvl[$numberingInfo['lvl']]["wval"]);
-                $listTypeStyle = HWPFWrapper::getListType($listType, $enc);
-            }
-
-            $listProperties = array('type' => $listTypeStyle, 'indentation' => $listIndentation);
-
-        } else {
-            //Default settings
-            $listProperties = array('type' => '', 'indentation' => '');
-        }
-
-        return $listProperties;
-    }
+//    /**
+//     * @param $abstractNum
+//     * @param $numberingInfo
+//     * @return array
+//     */
+//    private function extractListProperties($abstractNum, $numberingInfo)
+//    {
+//
+//        //Check if the object was created
+//        if (is_object($abstractNum)) {
+//
+//            //get xml structure
+//            $stringNumbering = java_values($abstractNum->getCTAbstractNum()->ToString());
+//            $numberingXml = str_replace('w:', 'w', $stringNumbering);
+//            $numXml = new SimpleXMLElement($numberingXml);
+//            $ilvl = $numXml->xpath('wlvl/wnumFmt');
+//            $ilvlSymbol = $numXml->xpath('wlvl/wlvlText');
+//            $listSymbol = $ilvlSymbol[$numberingInfo['lvl']]["wval"];
+//
+//            //Calculate list indentation
+//            $listIndentation = $this->calculateListIndentation($numXml, $numberingInfo);
+//
+//            //check if the list type exist and get style rule
+//            if (is_array($ilvl)) {
+//                $enc = utf8_encode($listSymbol);
+//                $listType = utf8_encode($ilvl[$numberingInfo['lvl']]["wval"]);
+//                $listTypeStyle = ListHelper::getListType($listType, $enc);
+//            }
+//
+//            $listProperties = array('type' => $listTypeStyle, 'indentation' => $listIndentation);
+//
+//        } else {
+//            //Default settings
+//            $listProperties = array('type' => '', 'indentation' => '');
+//        }
+//
+//        return $listProperties;
+//    }
 
 
     /**
@@ -758,7 +757,7 @@ class XWPFToHTMLConverter
 
         $abstractNum = $this->getAbstractNum($numberingStyleList);
         if (!is_null($abstractNum)) {
-            $listProperties = $this->extractListProperties($abstractNum, $numberingStyleList);
+            $listProperties = ListHelper::extractListProperties($abstractNum, $numberingStyleList);
         } else {
             $listProperties = array('type' => 'disc');
         }
@@ -1035,6 +1034,13 @@ class XWPFToHTMLConverter
 
         // Get styles
         $this->styles = $this->document->getStyles();
+        $ctpParagraph = java_values($paragraph->getCTP()->toString());
+        //var_dump($ctpParagraph);
+
+        if (strpos($ctpParagraph, 'mc:AlternateContent') !== false) {
+            $shapeCreator = new ShapeCreator($ctpParagraph);
+            $shapeCreator->processShape();
+        }
 
         // Get character runs
         $charRuns = java_values($paragraph->getIRuns());
@@ -1060,18 +1066,37 @@ class XWPFToHTMLConverter
                 return self::CUSTOMLIST;
             }
 
+//            //Get style name
+//            $styleName = java_values($style->getName());
+//
+//            //Apply heading html tag and section numbering if exists
+//            if (strpos(strtolower($styleName), 'heading') !== false) {
+//
+//                //Create headline container
+//                $container = $this->selectHeadlineContainer($styleName);
+//            }
+//
+//            //Process paragraph style
+//            $styleClass = $this->processStyle($styleClass, $styleXML);
+
             //Get style name
             $styleName = java_values($style->getName());
+
+            //Process paragraph style
+            $styleClass = $this->processStyle($styleClass, $styleXML);
 
             //Apply heading html tag and section numbering if exists
             if (strpos(strtolower($styleName), 'heading') !== false) {
 
                 //Create headline container
                 $container = $this->selectHeadlineContainer($styleName);
-            }
 
-            //Process paragraph style
-            $styleClass = $this->processStyle($styleClass, $styleXML);
+                // Add default p margins to headline
+                $mTop = (int)(str_replace('px', '', $styleClass->getAttributeValue('margin-top'))) + 16;
+                $mBottom = (int)(str_replace('px', '', $styleClass->getAttributeValue('margin-bottom'))) + 16;
+                $styleClass->setAttribute('margin-top', $mTop . 'px');
+                $styleClass->setAttribute('margin-bottom', $mBottom . 'px');
+            }
 
         } else {
 
@@ -1105,7 +1130,6 @@ class XWPFToHTMLConverter
 
             //Parse numbering bookmark
             $this->parseTocBookmarks($paragraph, $container);
-
         }
 
         //Check if is a table of contents
@@ -1116,8 +1140,24 @@ class XWPFToHTMLConverter
         }
 
         $this->setLineSpace($paragraph, $styleClass);
+
+        if((strpos($paragraph_xml, '<w:br w:type="page"/>') !== false) && self::$manualPageBreak ){
+            return self::PAGE_BREAK;
+        };
+
         // Iterate through paragraph characters
-        $this->parseRuns($charRuns, $container);
+        if(count($charRuns)>0) {
+            if ($this->checkLastRenderedPage($paragraph) && self::$defaultPageBreak) {
+                $runContainer = $this->parseLastParagraphBreak($charRuns, $container);
+                $container = $runContainer['firstPart'];
+            }else{
+                $container = $this->parseRuns($charRuns, $container);
+                $runContainer = array();
+            }
+        }else{
+            $container->addInnerText('<br/>');
+            return $container;
+        }
 
         // Get alignment
         $alignment = java_values($paragraph->getAlignment()->getValue());
@@ -1144,6 +1184,10 @@ class XWPFToHTMLConverter
             $container->addInnerElement($headline);
         }
 
+        if(array_key_exists('lastPart',$runContainer)){
+            $breakParagraph = array('firstPart'=>$container,'lastPart'=>$runContainer['lastPart']);
+            return $breakParagraph;
+        }
 
         // Return container
         return $container;
@@ -1184,18 +1228,26 @@ class XWPFToHTMLConverter
         return $headlineContainer;
     }
 
+    /**
+     * @param $paragraph
+     * @return bool
+     */
     private function checkLastRenderedPage($paragraph)
     {
-
         $paragraph_xml = java_values($paragraph->getCTP()->toString());
-
-        if (strpos($paragraph_xml, '<w:lastRenderedPageBreak/>') !== false and $this->toc) {
+        $isLastPage = (strpos($paragraph_xml, '<w:lastRenderedPageBreak/>') !== false && $this->toc) ? true : false;
+        if ($isLastPage) {
             $this->pageCounter++;
             $this->processPageBreak();
-            $isLastPage = true;
-        } else {
-            $isLastPage = false;
         }
+
+//        if (strpos($paragraph_xml, '<w:lastRenderedPageBreak/>') !== false and $this->toc) {
+//            $this->pageCounter++;
+//            $this->processPageBreak();
+//            $isLastPage = true;
+//        } else {
+//            $isLastPage = false;
+//        }
         return $isLastPage;
     }
 
@@ -1603,133 +1655,6 @@ class XWPFToHTMLConverter
         return $this->images;
     }
 
-    /**
-     * Parse a list element of the document
-     * @param $paragraph
-     * @return mixed
-     */
-    private function parseList($paragraph)
-    {
-        //Create list item element
-        $listItem = new HTMLElement(HTMLElement::LI);
-
-        //Parse paragraph
-        $paragraphContainer = $this->parseParagraph($paragraph, $this->listItemIterator);
-
-        if (is_object($paragraphContainer)) {
-            $paragraphContainer->setAttribute('style', 'text-indent:0px');
-            $this->listItemIterator++;
-            $listItem->setInnerElement($paragraphContainer);
-        } elseif (!is_object($paragraphContainer)) {
-            //var_dump(java_values($paragraph->getText()));
-        }
-        return $listItem;
-    }
-
-    /**
-     * Process a list of the document
-     * @param $numberingInfo
-     * @param $container
-     * @param $paragraph
-     * @param $key
-     */
-    private function processList($numberingInfo, $container, $paragraph, $key)
-    {
-
-        //Extract List Properties
-        $abstractNum = $this->getAbstractNum($numberingInfo);
-        $listProperties = $this->extractListProperties($abstractNum, $numberingInfo);
-
-        //If this is set to true a new list container should be created
-        $newListActivator = false;
-
-        if ($this->listNumId != $numberingInfo['numId']) {
-            $newListActivator = true;
-        }
-
-        $levelCount = $numberingInfo['lvl'];
-
-        //Check if the list level state has change
-        if ($this->listLevelState != $levelCount) {
-
-            //Create new list
-            $newList = new HTMLElement(HTMLElement::UL);
-            $newList->setAttribute('style', 'list-style-type:' . $listProperties['type']);
-
-            //Get last ul element to add the new list ul container
-            $lastContainer = $container->getLastElement();
-
-            for ($i = 0; $i < $this->listLevelState; $i++) {
-                if (is_object($lastContainer->getLastElement())) {
-                    $lastContainer = $lastContainer->getLastElement();
-                } else {
-                    //var_dump($container);
-                }
-            }
-            //Add new list in the last container
-            if (is_object($lastContainer)) {
-                $lastContainer->addInnerElement($newList);
-            }
-        }
-
-        //Assign new list level state and num id
-        $this->listLevelState = $numberingInfo['lvl'];
-        $this->listNumId = $numberingInfo['numId'];
-
-        // Parse list item
-        $listItemHTMLElement = $this->parseList($paragraph);
-        $listItemHTMLElement->setId($key);
-
-        //Check if the container has a last element to avoid non object exception
-        if (is_object($container->getLastElement()) and !$newListActivator) {
-
-            //Assign the tag name
-            $containerLastElement = $container->getLastElement()->getTagName();
-
-        } elseif ($newListActivator) {
-
-            //Add another level list
-            $containerLastElement = "innerul";
-        } else {
-
-            //Set default in case the container has no inner elements
-            $containerLastElement = "text";
-        }
-
-        // Check if the actual container has a list container as last element
-        if ($containerLastElement == "ul") {
-
-            //Initialize last container
-            $lastContainer = $container->getLastElement();
-
-            //Find current list element
-            for ($i = 0; $i < $this->listLevelState; $i++) {
-                $lastContainer = $lastContainer->getLastElement();
-            }
-
-            //Check if the container is fill
-            if (is_object($lastContainer)) {
-                $listItemHTMLElement->setId($key);
-                $lastContainer->addInnerElement($listItemHTMLElement);
-            }
-
-        } elseif ($containerLastElement == 'innerul' or $containerLastElement != "ul") {
-
-            //Create a new list container
-            $listContainer = new HTMLElement(HTMLElement::UL);
-
-            //Set list type style
-            $listContainer->setAttribute('style', 'list-style-type:' . $listProperties['type'] . ';' . 'margin-left:' . $listProperties['indentation'] . 'px');
-
-            //Fill the list with the first li item
-            $firstItemId = $key + 1;
-            $listItemHTMLElement->setId($firstItemId);
-            $listContainer->addInnerElement($listItemHTMLElement);
-
-            //Set the list to the container
-            $container->addInnerElement($listContainer);
-        }
-    }
 
     /**
      * Get list indentation from the list
@@ -1737,7 +1662,7 @@ class XWPFToHTMLConverter
      * @param $numberingInfo
      * @return int
      */
-    public function calculateListIndentation($numXml, $numberingInfo)
+    private function calculateListIndentation($numXml, $numberingInfo)
     {
 
         $ipind = $numXml->xpath('wlvl/wpPr/wind');
@@ -1903,19 +1828,48 @@ class XWPFToHTMLConverter
     }
 
     /**
+     * @param $element
      * @param $paragraphHTMLElement
      * @param $container
      * @param $key
      * @return HTMLElement
      */
-    private function processContainer($paragraphHTMLElement, $container, $key)
+    private function processContainer($element, $paragraphHTMLElement, $container, $key)
     {
+        if(is_a($paragraphHTMLElement,'HTMLElement')) {
+            $tagName = $paragraphHTMLElement->getTagName();
+        }
+
+        if(is_array($paragraphHTMLElement)){
+            if(array_key_exists('lastPart',$paragraphHTMLElement)){
+                $container->addInnerElement($paragraphHTMLElement['firstPart']);
+                $lastParagraph = $paragraphHTMLElement['lastPart'];
+                $paragraphHTMLElement = self::PAGE_BREAK;
+            }
+        }
+
+        // Check manual page break
+//        $elementType = $this->getElementType($element);
+//        if (($elementType == "PARAGRAPH") && self::$manualPageBreak ) {
+//            $paragraph = java_cast($element, 'org.apache.poi.xwpf.usermodel.XWPFParagraph');
+//            $paragraphXML = java_values($paragraph->getCTP()->ToString());
+//            $pageBreakMarkup = array('manual' => '<w:br w:type="page"/>', 'byPage' => '<w:lastRenderedPageBreak/>');
+//            $isManualPageBreak = (strpos($paragraphXML, $pageBreakMarkup['manual']) !== false);
+//            if ($isManualPageBreak) {
+//                $lastParagraph = $paragraphHTMLElement;
+//                $paragraphHTMLElement = self::PAGE_BREAK;
+//            }
+//        }
+
         // Check if this is a page break
         if (is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::PAGE_BREAK) {
             $container = $this->pageBreak($container);
+            if(isset($lastParagraph) && is_a($lastParagraph,'HTMLElement')) {
+                $container->addInnerElement($lastParagraph);
+                }
         } elseif (is_int($paragraphHTMLElement) && $paragraphHTMLElement == self::CUSTOMLIST) {
             $this->setCustomList($container, $key);
-        } elseif ($paragraphHTMLElement->getTagName() == "tr") {
+        } elseif (isset($tagName) && $tagName == "tr") {
 
             //Add Toc to the container
             if ($this->tocLevel <= 1) {
@@ -1930,30 +1884,42 @@ class XWPFToHTMLConverter
                     $lastTable->addInnerElement($paragraphHTMLElement);
                 }
             }
-        } elseif ($paragraphHTMLElement->getTagName() == "header") {
 
+        } elseif (isset($tagName) && $tagName == "header") {
             $headline = $paragraphHTMLElement->getLastElement();
-            if (is_object($headline)) {
-                $tagHeadline = $headline->getTagName();
-                if (!is_int($headline->getInnerText())) {
-                    $this->headLineList[] = array(
-                        'tag' => $tagHeadline,
-                        'content' => trim($headline->getLastElement()->getInnerText())
-                    );
-                }
-                if ($tagHeadline == "h1") {
-                    if (!is_null($headline->getInnerText())) {
-                        $headline->setAttribute('id', "toc" . $this->headlineIdSection);
-                        $this->headlineIdSection++;
-                        $container = $this->pageBreak($container);
-                    }
-                }
-            }
+            $container = $this->parseHeaderParagraph($headline,$container);
             $container->addInnerElement($paragraphHTMLElement);
         } else {
             $container->addInnerElement($paragraphHTMLElement);
         }
 
+        return $container;
+    }
+
+    /**
+     * @param $headline
+     * @param $container
+     * @return HTMLElement
+     */
+    private function parseHeaderParagraph($headline,$container){
+        if (is_object($headline)) {
+            $tagHeadline = $headline->getTagName();
+            if (!is_int($headline->getInnerText())) {
+                $this->headLineList[] = array(
+                    'tag' => $tagHeadline,
+                    'content' => trim($headline->getLastElement()->getInnerText())
+                );
+            }
+            $breakAtH1 = ($tagHeadline == "h1" && self::$breakH1);
+            $breakAtH2 = ($tagHeadline == "h2" && self::$breakH2);
+            if ($breakAtH1 || $breakAtH2) {
+                if (!is_null($headline->getInnerText())) {
+                    $headline->setAttribute('id', "toc" . $this->headlineIdSection);
+                    $this->headlineIdSection++;
+                    $container = $this->pageBreak($container);
+                }
+            }
+        }
         return $container;
     }
 
@@ -1995,38 +1961,60 @@ class XWPFToHTMLConverter
     private function parseRuns($charRuns, $container)
     {
         $prevCharRunHTMLElement = null;
-       // for ($j = 0; $j < count($charRuns); $j++) {
         foreach($charRuns as $charRun) {
-            if (java_instanceof($charRun, java('org.apache.poi.xwpf.usermodel.XWPFRun'))) {
-                $characterRun = $charRun;
-                $pictures = java_values($characterRun->getEmbeddedPictures());
-                //$charRunHTMLElement = $this->parseCharacterRun($characterRun);
-                $run = new XWPFRun($characterRun, $this->mainStyleSheet);
-                $charRunHTMLElement = $run->parseRun();
+            $characterRun = $charRun;
+            $pictures = java_values($characterRun->getEmbeddedPictures());
+            $run = new XWPFRun($characterRun, $this->mainStyleSheet);
+            $charRunHTMLElement = $run->parseRun();
 
-                // Check if this is a picture
-                if (count($pictures) > 0) {
-
-                    $container->addInnerElement($charRunHTMLElement);
-                    $prevCharRunHTMLElement = clone $charRunHTMLElement;
-
-                    // This part is needed in order to merge similar SPAN tags in one, if they have same
-                    // style (this will also prevent unneeded spaces)
-                } else if (@isset($prevCharRunHTMLElement) && $charRunHTMLElement->getClass() == $prevCharRunHTMLElement->getClass()) {
-
-                    $container->getLastElement()->addInnerText($charRunHTMLElement->getInnerText());
-
-                    // The rest of elements
-                } else {
-
-                    $container->addInnerElement($charRunHTMLElement);
-                    $prevCharRunHTMLElement = clone $charRunHTMLElement;
-                }
+            // Check if this is a picture
+            if (count($pictures) > 0) {
+                $container->addInnerElement($charRunHTMLElement);
+                $prevCharRunHTMLElement = clone $charRunHTMLElement;
+            } else if (@isset($prevCharRunHTMLElement) && $charRunHTMLElement->getClass() == $prevCharRunHTMLElement->getClass()) {
+                $container->getLastElement()->addInnerText($charRunHTMLElement->getInnerText());
             } else {
-                var_dump($charRun);
+                $container->addInnerElement($charRunHTMLElement);
+                $prevCharRunHTMLElement = clone $charRunHTMLElement;
+            }
+        }
+        return $container;
+    }
+
+    /**
+     * @param $charRuns
+     * @param $container
+     * @return array|null
+     */
+    private function parseLastParagraphBreak($charRuns, $container)
+    {
+        $runHTMLElement = HWPFWrapper::selectBreakPageContainer($container);
+        $prevCharRunHTMLElement = null;
+        $numberOfRuns = count($charRuns);
+        $runContainer = null;
+
+        foreach ($charRuns as $key => $charRun) {
+            $run = new XWPFRun($charRun, $this->mainStyleSheet);
+            $charRunHTMLElement = $run->parseRun();
+            $isDefaultPageBreak = ($run->hasDefaultPageBreak()) ? true : false;
+
+            if ($isDefaultPageBreak && ($numberOfRuns > 0)) {
+                while (($key < $numberOfRuns) ) {
+                    $nextRun = $key;
+                    $lastRuns = new XWPFRun($charRuns[$nextRun], $this->mainStyleSheet);
+                    $lastRunHTML = $lastRuns->parseRun();
+                    $runHTMLElement->addInnerElement($lastRunHTML);
+                    $runContainer = array('firstPart'=>$container,'lastPart'=>$runHTMLElement);
+                    $key++;
+                }
+                break;
+            }else {
+                $container->addInnerElement($charRunHTMLElement);
+                $runContainer = array('firstPart' => $container);
             }
         }
 
+        return $runContainer;
     }
 
     /**
