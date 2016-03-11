@@ -4,6 +4,7 @@ include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFTableRow.php';
 include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFTableCell.php';
 include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFSDTCell.php';
 include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/XWPFStyle.php';
+include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/Helpers/TableStyleHelper.php';
 
 /**
  * @author Peter Arboleda
@@ -50,6 +51,27 @@ class XWPFTable
             $xmlTable = null;
         }
         return $xmlTable;
+    }
+
+    /**
+     * @param $propertyPath
+     * @return array|SimpleXMLElement
+     */
+    private function getProperty($propertyPath){
+        $result = $this->getXMLObject()->xpath($propertyPath);
+        $property = (count($result)>0) ? $result[0] : array();
+        return $property;
+    }
+
+    /**
+     * @return SimpleXMLElement
+     */
+    private function getXMLObject()
+    {
+        $styleXML = $this->getCTTbl();
+        $styleXML = str_replace('w:', 'w', $styleXML);
+        $xml = new SimpleXMLElement($styleXML);
+        return $xml;
     }
 
     /**
@@ -134,6 +156,10 @@ class XWPFTable
                 $conditionalTableRowStyleClass = $this->processConditionalFormat($rowNumber, $styleClass, $numberOfRows);
                 $rowContainer = new HTMLElement(HTMLElement::TR);
                 $xwpfRow = new XWPFTableRow($row);
+                $rowStyle = $xwpfRow->processRowStyle();
+                $rowClassName = $this->mainStyleSheet->getClassName($rowStyle);
+                $rowContainer->setClass($rowClassName);
+
                 $cells = $xwpfRow->getTableICells();
 
                 foreach ($cells as $cellNumber => $cell) {
@@ -190,7 +216,14 @@ class XWPFTable
         }else {
             $tableStyleClass = new StyleClass();
             $tableStyleClass->setAttribute("border-collapse", "collapse");
+            $tcBorders = $this->getProperty("wtblPr/wtblBorders");
+            $borders = TableStyleHelper::getBorderProperties($tcBorders);
+            $tableStyleClass = TableStyleHelper::assignTableBorderStyles($borders,$tableStyleClass);
             $tableStyles['table'] = $tableStyleClass;
+
+            $tableCellStyleClass =  new StyleClass();
+            $tableCellStyleClass = TableStyleHelper::assignCellBorderStyles($borders,$tableCellStyleClass);
+            $tableStyles['cell'] = $tableCellStyleClass;
         }
 
         return $tableStyles;
@@ -221,6 +254,7 @@ class XWPFTable
                 }
             }
         }
+
         if (strlen($backgroundColor)) {
             $conditionalTableCellStyleClass->setAttribute("background-color", '#' . $backgroundColor);
         }
