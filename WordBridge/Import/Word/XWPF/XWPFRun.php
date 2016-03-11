@@ -11,6 +11,7 @@ class XWPFRun
 {
     private $run;
     private $mainStyleSheet;
+    private $runXml;
 
     /**
      * @param $run
@@ -20,6 +21,7 @@ class XWPFRun
     {
         if (java_instanceof($run, java('org.apache.poi.xwpf.usermodel.XWPFRun'))) {
             $this->run = $run;
+            $this->runXml = $this->getCTP();
         }
         $this->mainStyleSheet = $mainStyleSheet;
     }
@@ -29,13 +31,11 @@ class XWPFRun
      */
     private function getXMLRun()
     {
-        $charXml = java_values($this->run->getCTR()->ToString());
-        $charXml = str_replace('w:', 'w', $charXml);
+        $charXml = str_replace('w:', 'w', $this->runXml);
         $runXml = new SimpleXMLElement($charXml);
 
         return $runXml;
     }
-
 
     /**
      * @return HTMLElement
@@ -55,6 +55,25 @@ class XWPFRun
                 break;
         }
         return $container;
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getCTP(){
+        $charXml = java_values($this->run->getCTR()->ToString());
+        return $charXml;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasDefaultPageBreak(){
+        $pageBreakMarkup = array('manual' => '<w:br w:type="page"/>', 'byPage' => '<w:lastRenderedPageBreak/>');
+        $isByPage = (strpos($this->runXml, $pageBreakMarkup['byPage']) !== false) ? true:false;
+        $isManual = (strpos($this->runXml, $pageBreakMarkup['manual']) !== false) ? true:false;
+        $isPageBreak = ($isByPage) ? true : false;
+        return $isPageBreak;
     }
 
     /**
