@@ -118,6 +118,30 @@ class HWPFWrapper {
     }
 
     /**
+     * @param $container
+     * @return HTMLElement
+     * @internal param $tagName
+     */
+    public static function selectBreakPageContainer($container){
+        $tagName = $container->getTagname();
+        switch ($tagName) {
+            case 'h1':
+                $runHTMLElement = new HTMLElement(HTMLElement::H1);
+                break;
+            case 'h2':
+                $runHTMLElement = new HTMLElement(HTMLElement::H2);
+                break;
+            case 'h3':
+                $runHTMLElement = new HTMLElement(HTMLElement::H3);
+                break;
+            default :
+                $runHTMLElement = new HTMLElement(HTMLElement::P);
+                break;
+        }
+        return $runHTMLElement;
+    }
+
+    /**
      * Get border type
      * @param   string  Name
      * @return  string
@@ -242,10 +266,6 @@ class HWPFWrapper {
 
             case 'bullet':
                 $listType = '';
-                //echo $listSymbol."-";
-                //echo $type;
-                //$var = strcmp($listSymbol,"Ã¯Â‚Â·");
-                //echo $var;
                 if($listSymbol === "Ã¯Â‚Â·"){
                     $listType = "disc";
                     echo "si llego aca";
@@ -254,7 +274,7 @@ class HWPFWrapper {
                 }
 
                 if($listSymbol === "o"){
-                    //$listType = "circle";
+                    $listType = "circle";
                 }else{
                     //echo "no es igual".$listSymbol." a o";
                 }

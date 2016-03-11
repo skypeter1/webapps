@@ -112,39 +112,6 @@ class XWPFTableCell
         return $cellXML;
     }
 
-    private function getBorderProperties($tcBorders)
-    {
-        $borders = array();
-        if (empty($tcBorders)) {
-            $borders = null;
-        } else {
-            $borderKeys = array(
-                "bottom" => "wbottom",
-                "top" => "wtop",
-                "right" => "wright",
-                "left" => "wleft",
-                "insideH" => "winsideH",
-                "insideV" => "winsideV"
-            );
-            foreach ($borderKeys as $key => $borderKey) {
-                if (array_key_exists($borderKey, $tcBorders)) {
-                    $val = $tcBorders->xpath($borderKey)[0]["wval"];
-                    $size = $tcBorders->xpath($borderKey)[0]["wsz"];
-                    $space = $tcBorders->xpath($borderKey)[0]["wspace"];
-                    $color = $tcBorders->xpath($borderKey)[0]["wcolor"];
-
-                    $borders[$key]['val'] = (is_object($val)) ? (string)$val : "";
-                    $borders[$key]['size'] = (is_object($size)) ? (string)round($size / 4) : "";
-                    $borders[$key]['space'] = (is_object($space)) ? (string)$space : "";
-                    $borders[$key]['color'] = (is_object($color)) ? (string)$color : "";
-                    if ($borders[$key]['color'] == "auto") $borders[$key]['color'] = "000000";
-                }
-            }
-        }
-
-        return $borders;
-    }
-
     public function getCellWidht()
     {
         $cellWidht = array();
@@ -187,7 +154,7 @@ class XWPFTableCell
 
         $result = $this->getXMLCellObject()->xpath("wtcPr/wtcBorders");
         $tcBorders = (count($result) > 0) ? $result[0] : array();
-        $cellBorders = $this->getBorderProperties($tcBorders);
+        $cellBorders = ListHelper::getBorderProperties($tcBorders);
 
         //Assign border styles
         if (!is_null($cellBorders)) {
@@ -246,8 +213,8 @@ class XWPFTableCell
         $cellContainer = new HTMLElement(HTMLElement::TD);
         $paragraphs = $this->getParagraphs();
 
-        foreach ($paragraphs as $javaParagraph) {
-            $paragraph = new XWPFParagraph($javaParagraph, $this->mainStyleSheet);
+        foreach ($paragraphs as $key => $javaParagraph) {
+            $paragraph = new XWPFParagraph($javaParagraph, $this->mainStyleSheet, $key);
             $paragraphContainer = $paragraph->parseParagraph();
             $styleClass = $paragraph->processParagraphStyle();
             $paragraphStyle = $this->extractParagraphStyles();
