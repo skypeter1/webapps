@@ -154,7 +154,7 @@ class XWPFTableCell
 
         $result = $this->getXMLCellObject()->xpath("wtcPr/wtcBorders");
         $tcBorders = (count($result) > 0) ? $result[0] : array();
-        $cellBorders = ListHelper::getBorderProperties($tcBorders);
+        $cellBorders = TableStyleHelper::getBorderProperties($tcBorders);
 
         //Assign border styles
         if (!is_null($cellBorders)) {

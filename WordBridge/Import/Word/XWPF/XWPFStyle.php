@@ -1,5 +1,7 @@
 <?php
 
+//include '/var/lib/tomcat7/webapps/WordBridge/Import/Word/XWPF/Helpers/TableStyleHelper.php';
+
 /**
  * Created by PhpStorm.
  * User: Peter
@@ -40,12 +42,20 @@ class XWPFStyle
         return $type;
     }
 
+    /**
+     * @return StyleClass
+     */
     public function processStyle()
     {
         $type = $this->getType();
+        $xml = $this->getXMLObject();
+
         switch ($type) {
             case 'table':
-                $styleClass = $this->processTableStyle();
+                $styleClass = $this->processTableStyle($xml);
+                break;
+            case 'paragraph':
+                $styleClass = $this->processParagraphStyle($xml);
                 break;
             default:
                 $styleClass = new StyleClass();
@@ -53,6 +63,10 @@ class XWPFStyle
         return $styleClass;
     }
 
+    /**
+     * @param $propertyPath
+     * @return array|SimpleXMLElement
+     */
     private function getProperty($propertyPath){
         $result = $this->getXMLObject()->xpath($propertyPath);
         $property = (count($result)>0) ? $result[0] : array();
@@ -60,44 +74,8 @@ class XWPFStyle
     }
 
     /**
-     * @param $tcBorders
      * @return array|null
      */
-    public function getBorderProperties($tcBorders)
-    {
-        $borders = array();
-        if (empty($tcBorders)) {
-            $borders = null;
-        } else {
-            $borderKeys = array(
-                "bottom" => "wbottom",
-                "top" => "wtop",
-                "right" => "wright",
-                "left" => "wleft",
-                "insideH" => "winsideH",
-                "insideV" => "winsideV"
-            );
-            foreach ($borderKeys as $key => $borderKey) {
-                if (array_key_exists($borderKey, $tcBorders)) {
-                    $val = $tcBorders->xpath($borderKey)[0]["wval"];
-                    if($val != "nil") {
-                        $size = $tcBorders->xpath($borderKey)[0]["wsz"];
-                        $space = $tcBorders->xpath($borderKey)[0]["wspace"];
-                        $color = $tcBorders->xpath($borderKey)[0]["wcolor"];
-
-                        $borders[$key]['val'] = (is_object($val)) ? (string)$val : "";
-                        $borders[$key]['size'] = (is_object($size)) ? (string)round($size / 4) : "";
-                        $borders[$key]['space'] = (is_object($space)) ? (string)$space : "";
-                        $borders[$key]['color'] = (is_object($color)) ? (string)$color : "";
-                        if ($borders[$key]['color'] == "auto") $borders[$key]['color'] = "000000";
-                    }
-                }
-            }
-        }
-
-        return $borders;
-    }
-
     public function getTableMargins()
     {
         $cellMargins = array();
@@ -129,12 +107,12 @@ class XWPFStyle
     }
 
     /**
+     * @param $xml
      * @return StyleClass
      */
-    public function processTableStyle()
+    public function processTableStyle($xml)
     {
         $tableStyleClass = new StyleClass();
-        $xml = $this->getXMLObject();
 
         // Get text color
         $color = $xml->xpath('*/wcolor');
@@ -143,18 +121,8 @@ class XWPFStyle
 
         //Get border properties
         $tcBorders = $this->getProperty("wtblPr/wtblBorders");
-        $borders = $this->getBorderProperties($tcBorders);
-
-        //Assign border styles
-        if (!is_null($borders)) {
-            $tableBorders = array('left', 'right', 'top', 'bottom');
-            foreach ($borders as $key => $border) {
-                if (in_array($key, $tableBorders)) {
-                    $tableStyleClass->setAttribute("border-" . $key,
-                        $border['size'] . "px " . HWPFWrapper::getBorder($border['val']) . " #" . $border['color']);
-                }
-            }
-        }
+        $borders = TableStyleHelper::getBorderProperties($tcBorders);
+        TableStyleHelper::assignTableBorderStyles($borders,$tableStyleClass);
 
         //Default settings
         $tableStyleClass->setAttribute("border-collapse", "collapse");
@@ -171,7 +139,7 @@ class XWPFStyle
     private function getCellStyleBorders()
     {
         $tcBorders = $this->getProperty("wtblPr/wtblBorders");
-        $cellBorders = $this->getBorderProperties($tcBorders);
+        $cellBorders = TableStyleHelper::getBorderProperties($tcBorders);
         return $cellBorders;
     }
 
@@ -182,17 +150,7 @@ class XWPFStyle
     {
         $tableCellStyleClass = new StyleClass();
         $cellBorders = $this->getCellStyleBorders();
-
-        if (!is_null($cellBorders)) {
-            $tableBorders = array('right'=>'insideV', 'bottom'=>'insideH');
-            foreach ($cellBorders as $key => $border) {
-                if (in_array($key, $tableBorders)) {
-                    $direction = ($key == "insideH") ? "bottom" : "right";
-                    $tableCellStyleClass->setAttribute("border-" . $direction,
-                        $border['size'] . "px " . HWPFWrapper::getBorder($border['val']) . " #" . $border['color']);
-                }
-            }
-        }
+        $tableCellStyleClass = TableStyleHelper::assignCellBorderStyles($cellBorders, $tableCellStyleClass);
 
         return $tableCellStyleClass;
     }
@@ -211,7 +169,7 @@ class XWPFStyle
                 $wtcPr = $tblStylePr->xpath('wtcPr');
                 if (!empty($wtcPr)) {
                     $wtcBorders = $wtcPr[0]->xpath("wtcBorders");
-                    $conditionalBorders = (!empty($wtcBorders)) ? $this->getBorderProperties($wtcBorders[0]) : array();
+                    $conditionalBorders = (!empty($wtcBorders)) ? TableStyleHelper::getBorderProperties($wtcBorders[0]) : array();
                     $wtcBackgroundColor = $wtcPr[0]->xpath("wshd");
                     $backgroundColor = (!empty($wtcBackgroundColor)) ? (string)$wtcBackgroundColor[0]['wfill'] : "";
                 } else {
@@ -234,12 +192,11 @@ class XWPFStyle
      * @param   string  Style XML
      * @return  object
      */
-    public function processParagraphStyle()
+    public function processParagraphStyle($xml)
     {
         $styleClass = new StyleClass();
-        $xml = $this->getXMLObject();
+        //var_dump($this->getCTStyle());
 
-        // TODO: Check what this is being used for (currently not in use)
         $based = $xml->xpath('*/wbasedOn');
         if ($based) $based = ((string)$based[0]['wval']);
 

@@ -554,10 +554,8 @@ class XWPFToHTMLConverter
 
                 $numberingInfo = ListHelper::paragraphExtractNumbering($paragraph);
                 if ($numberingInfo) {
-//                    var_dump(java_values($paragraph->getCTP()->toString()));
                     $xwpfList = new XWPFList($paragraph,$this->mainStyleSheet,$key);
                     $xwpfList->parseList($numberingInfo, $container, $paragraph, $this->listNumId, $this->listLevelState);
-                    //$this->processList($numberingInfo, $container, $paragraph, $key);
                 } else {
                     $paragraphHTMLElement = $this->parseParagraph($paragraph, $key);
                     $container = $this->processContainer($element, $paragraphHTMLElement, $container, $key);
@@ -581,20 +579,6 @@ class XWPFToHTMLConverter
 
     }
 
-    private function inspectParagraph($paragraph, $container, $key)
-    {
-        $numberingInfo = $this->paragraphExtractNumbering($paragraph);
-
-        if ($numberingInfo) {
-            $xwpfList = new XWPFList($paragraph, $this->mainStyleSheet);
-            $xwpfList->processList($numberingInfo, $container, $paragraph, $key, $this->listNumId, $this->listLevelState);
-
-            //Assign new list level state and num id
-            $this->listLevelState = $numberingInfo['lvl'];
-            $this->listNumId = $numberingInfo['numId'];
-        }
-
-    }
 
     private function setCustomList($container, $key)
     {
@@ -1046,7 +1030,7 @@ class XWPFToHTMLConverter
         $charRuns = java_values($paragraph->getIRuns());
 
         //Check paragraph numbering
-        $numberingInfo = $this->paragraphExtractNumbering($paragraph);
+        $numberingInfo = ListHelper::paragraphExtractNumbering($paragraph);
 
         if (java_values($paragraph->getStyleID()) != null) {
 
@@ -1114,7 +1098,7 @@ class XWPFToHTMLConverter
         $indentation = java_values($paragraph->getIndentationFirstLine());
 
         // Check if is list indentation
-        $numberingInfo = $this->paragraphExtractNumbering($paragraph);
+        $numberingInfo = ListHelper::paragraphExtractNumbering($paragraph);
 
         //Set indentation to paragraphs except for list items
         if ($indentation > 0 and !$numberingInfo) {
@@ -1286,44 +1270,6 @@ class XWPFToHTMLConverter
         //Setting container
         //$this->auxContainer = array($footerHtml, $headerHtml);
 
-    }
-
-    /**
-     * Extracts numbering information
-     * @param   object  Paragraph
-     * @return  string|boolean  Numbering
-     */
-    private function paragraphExtractNumbering($paragraph)
-    {
-        // Prepare paragraph XML
-        $paragraph_xml = java_values($paragraph->getCTP()->toString());
-        $paragraph_xml = str_replace('w:', 'w', $paragraph_xml);
-
-        // Get level
-        $xml = new SimpleXMLElement($paragraph_xml);
-        $lvl = $xml->xpath("wpPr/wnumPr/wilvl");
-
-        // Check if there is numbering on level
-        if (!is_array($lvl) || count($lvl) == 0) {
-            return false;
-        }
-
-        // Get numbering ID
-        $lvl = $lvl[0]['wval'] . '';
-        $numId = $xml->xpath("wpPr/wnumPr/wnumId");
-        $numId = $numId[0]['wval'] . '';
-
-        // Set numbering data
-        $data['lvl'] = $lvl;
-        $data['numId'] = $numId;
-
-        // Check numbering ID and return data
-        if ($numId >= '1') {
-            return $data;
-        }
-
-        // No numbering found
-        return false;
     }
 
 
