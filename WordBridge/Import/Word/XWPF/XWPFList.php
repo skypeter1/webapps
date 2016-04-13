@@ -14,6 +14,15 @@ class XWPFList
     private $paragraph;
     private $mainStyleSheet;
     private $id;
+    private $listItemIterator;
+    private $tocNumber;
+    private $firstLevel;
+    private $secondLevel;
+    private $thirdLevel;
+    private $headlineList;
+    private $currentNumID;
+    private $level;
+    private $sectionNumbering;
     const UL = 'ul';
     const INNER_UL = 'innerul';
 
@@ -29,6 +38,7 @@ class XWPFList
         $this->mainStyleSheet = $stylesheet;
         $this->id = $key;
         $this->numbering = java_cast($numberingObject, 'org.apache.poi.xwpf.usermodel.XWPFNumbering');
+        $this->currentNumID = $this->getNumId();
     }
 
     /**
@@ -37,6 +47,71 @@ class XWPFList
     private function getId()
     {
         return $this->id;
+    }
+
+    /**
+     * @return mixed
+     * Possible values: bullet or decimal
+     */
+    private function getListFormat(){
+        $listType = java_values($this->paragraph->getNumFmt());
+        return $listType;
+    }
+
+    public function getNumLvl(){
+        $numLvl = java_values($this->paragraph->getNumIlvl());
+        return $numLvl;
+    }
+
+    public function getNumLevelText(){
+        $numLevelText = java_values($this->paragraph->getNumLevelText());
+        return $numLevelText;
+    }
+
+    public function getNumId(){
+        $numId = java_values($this->paragraph->getNumId());
+        return $numId;
+    }
+
+    public function setLevels(&$first,&$second,&$third,&$level){
+        $this->firstLevel = &$first;
+        $this->secondLevel = &$second;
+        $this->thirdLevel = &$third;
+        $this->level = &$level;
+    }
+
+    /**
+     * @param $listItemIterator
+     */
+    public function setLevel(&$listItemIterator){
+        $this->listItemIterator = &$listItemIterator;
+    }
+
+    /**
+     * @param $listItemIterator
+     */
+    public function setListItemLevel(&$listItemIterator){
+        $this->listItemIterator = &$listItemIterator;
+    }
+
+    /**
+     * @param $headlineList
+     * @internal param $listItemIterator
+     */
+    public function setHeadlineList(&$headlineList){
+        $this->headlineList = &$headlineList;
+    }
+
+    /**
+     * @param $tocNumber
+     * @internal param $listItemIterator
+     */
+    public function setTocNumber(&$tocNumber){
+        $this->tocNumber = &$tocNumber;
+    }
+
+    public function setSectionNumbering($sectionNumbering){
+        $this->sectionNumbering = $sectionNumbering;
     }
 
     /**
@@ -50,12 +125,19 @@ class XWPFList
         $listItem = new HTMLElement(HTMLElement::LI);
 
         //Parse paragraph
-        $paragraph = new XWPFParagraph($paragraph, $this->mainStyleSheet,$this->getId());
-        $paragraphContainer = $paragraph->parseParagraph();
+        $paragraphHTML = new XWPFParagraph($paragraph, $this->mainStyleSheet, $this->getId());
+        $paragraphContainer = $paragraphHTML->parseParagraph();
 
         if (is_object($paragraphContainer)) {
+            if(isset($this->sectionNumbering)){
+                ListHelper::setListNumbering($this->sectionNumbering,$paragraphContainer);
+            }
             $paragraphContainer->setAttribute('style', 'text-indent: 0px; margin-bottom: 0px');
-            $listItem->setInnerElement($paragraphContainer);
+            if (isset($this->listItemIterator)) {
+                $listItem->setAttribute('value',$this->listItemIterator);
+                $this->listItemIterator++;
+            }
+            $listItem->addInnerElement($paragraphContainer);
         } elseif (!is_object($paragraphContainer)) {
             var_dump(java_values($paragraph->getText()));
         }
@@ -71,16 +153,19 @@ class XWPFList
      * @param $listLevelState
      * @internal param $key
      */
-    public function parseList($numberingInfo, $container, $paragraph, &$listNumId,&$listLevelState)
+    public function parseList($numberingInfo, $container, $paragraph, &$listNumId, &$listLevelState, &$listItemIterator)
     {
-
         //Extract List Properties
-        $abstractNum = $this->getAbstractNum($numberingInfo);
+        $abstractNum = $this->getAbstractNum();
         $listProperties = ListHelper::extractListProperties($abstractNum, $numberingInfo);
 
         //If this is set to true a new list container should be created
         $isNewList = ($listNumId != $numberingInfo['numId']) ? true : false;
         $levelCount = $numberingInfo['lvl'];
+
+        if($isNewList) {
+            $this->listItemIterator = 1;
+        }
 
         //Check if the list level state has change
         if ($listLevelState != $levelCount) {
@@ -105,11 +190,12 @@ class XWPFList
     }
 
     /**
-     * @param $numberingInfo
      * @return mixed
+     * @internal param $numberingInfo
      */
-    private function getAbstractNum($numberingInfo)
+    private function getAbstractNum()
     {
+        $numberingInfo = ListHelper::paragraphExtractNumbering($this->paragraph);
         $numbering = $this->numbering;
         $numId = new Java('java.math.BigInteger', $numberingInfo['numId']);
         $abstractNumId = java_values($numbering->getAbstractNumId($numId)->toString());
@@ -129,7 +215,13 @@ class XWPFList
     {
         $listContainer = new HTMLElement(HTMLElement::UL);
         $listContainer->setId($this->getId());
-        $listContainer->setAttribute('style', 'list-style-type:' . $listProperties['type'] . ';' . 'margin-left:' . $listProperties['indentation'] . 'px');
+        $paragraphHTML = new XWPFParagraph($this->paragraph, $this->mainStyleSheet,$this->getId());
+        if (isset($this->tocNumber) && $paragraphHTML->isHeadline()) {
+            $listContainer->setAttribute('style', 'list-style-type: none;' . 'margin-left:' . $listProperties['indentation'] . 'px');
+        }else{
+            $listContainer->setAttribute('style', 'list-style-type:' . $listProperties['type'] . ';' . 'margin-left:' . $listProperties['indentation'] . 'px');
+        }
+
         $firstItemId = $this->getId() + 1;
         $listItemHTMLElement->setId($firstItemId);
         $listContainer->addInnerElement($listItemHTMLElement);
@@ -145,8 +237,14 @@ class XWPFList
     private function createNewLevelList($container, &$listLevelState, $listProperties)
     {
         $newList = new HTMLElement(HTMLElement::UL);
-        $newList->setAttribute('style', 'list-style-type:' . $listProperties['type']);
+        $paragraphHTML = new XWPFParagraph($this->paragraph, $this->mainStyleSheet,$this->getId());
+        if (isset($this->tocNumber) && $paragraphHTML->isHeadline()) {
+            $newList->setAttribute('style', 'list-style-type: none;' . 'margin-left:' . $listProperties['indentation'] . 'px');
+        }else {
+            $newList->setAttribute('style', 'list-style-type:' . $listProperties['type']);
+        }
         $lastContainer = $container->getLastElement();
+        if(isset($this->listItemIterator)) $this->listItemIterator = 1;
         for ($i = 0; $i < $listLevelState; $i++) {
             if (is_object($lastContainer->getLastElement())) $lastContainer = $lastContainer->getLastElement();
         }
@@ -193,6 +291,51 @@ class XWPFList
             $listItemHTMLElement->setId($this->getId());
             $lastContainer->addInnerElement($listItemHTMLElement);
         }
+    }
+
+    /**
+     * @param $paragraph
+     * @return HTMLElement
+     */
+    private function setChapterNumbers($paragraph)
+    {
+        $paragraphHTML = new XWPFParagraph($paragraph, $this->mainStyleSheet, $this->getId());
+        $paragraphContainer = $paragraphHTML->parseParagraph();
+
+        if (isset($this->tocNumber) && $paragraphHTML->isHeadline()) {
+            $styleName = $paragraphHTML->getStyleName();
+            switch ($styleName) {
+                case 'Heading 1':
+                    $this->firstLevel++;
+                    $sectionText = (string)$this->firstLevel;
+                    $this->secondLevel = 0;
+                    $this->thirdLevel = 0;
+                    break;
+                case 'Heading 2':
+                    $this->secondLevel++;
+                    $sectionText = $this->firstLevel . "." . $this->secondLevel;
+                    $this->thirdLevel = 0;
+                    break;
+                case 'Heading 3':
+                    $this->thirdLevel++;
+                    $sectionText = $this->firstLevel . "." . $this->secondLevel . "." . $this->thirdLevel;
+                    break;
+                default:
+                    $sectionText = "";
+                    break;
+            }
+
+//            var_dump($sectionText);
+//            var_dump(java_values($paragraph->getText()));
+
+            $sectionContainer = new HTMLElement(HTMLElement::SPAN);
+            $sectionContainer->setInnerText($sectionText);
+            $elements = $paragraphContainer->getLastElement()->getInnerElements();
+            array_unshift($elements, $sectionContainer);
+            $paragraphContainer->getLastElement()->setInnerElementsArray($elements);
+            return $paragraphContainer;
+        }
+        return $paragraphContainer;
     }
 
 }

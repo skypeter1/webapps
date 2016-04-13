@@ -56,6 +56,7 @@ class XWPFStyle
                 break;
             case 'paragraph':
                 $styleClass = $this->processParagraphStyle($xml);
+                //var_dump($this->getCTStyle());
                 break;
             default:
                 $styleClass = new StyleClass();
@@ -119,6 +120,8 @@ class XWPFStyle
         $color = ($color) ? ((string)$color[0]['wval']) : false;
         if ($color == 'auto') $color = '000000';
 
+        //var_dump($this->getCTStyle());
+
         //Get border properties
         $tcBorders = $this->getProperty("wtblPr/wtblBorders");
         $borders = TableStyleHelper::getBorderProperties($tcBorders);
@@ -165,9 +168,29 @@ class XWPFStyle
         $conditionalFormatting = $this->getXMLObject()->xpath('wtblStylePr');
         if (!empty($conditionalFormatting)) {
             foreach ($conditionalFormatting as $tblStylePr) {
+
                 $formatKey = (string)$tblStylePr['wtype'];
                 $wtcPr = $tblStylePr->xpath('wtcPr');
+                $wrPr = $tblStylePr->xpath('wrPr');
+                if(!empty($wrPr)){
+                    //var_dump($wrPr);
+
+                    $italic = $wrPr[0]->xpath('wi');
+                    $isItalic = (!empty($italic)) ? true : false;
+
+                    $bold = $wrPr[0]->xpath('wb');
+                    $isBold = (!empty($bold)) ? true : false;
+
+                    $color = $wrPr[0]->xpath('wcolor');
+                    $color = ($color) ? ((string)$color[0]['wval']) : false;
+                    if ($color == 'auto') $color = '000000';
+                    $runConditionalStyle = array('bold' => $isBold, 'color' => $color , 'italic' => $isItalic);
+
+                }else{
+                    $runConditionalStyle = array();
+                }
                 if (!empty($wtcPr)) {
+                    //var_dump($wtcPr);
                     $wtcBorders = $wtcPr[0]->xpath("wtcBorders");
                     $conditionalBorders = (!empty($wtcBorders)) ? TableStyleHelper::getBorderProperties($wtcBorders[0]) : array();
                     $wtcBackgroundColor = $wtcPr[0]->xpath("wshd");
@@ -179,7 +202,8 @@ class XWPFStyle
                 $conditionalFormatArray[] = array(
                     'type' => $formatKey,
                     'borders' => $conditionalBorders,
-                    'backgroundColor' => $backgroundColor
+                    'backgroundColor' => $backgroundColor,
+                    'runStyle' => $runConditionalStyle
                 );
             }
         }

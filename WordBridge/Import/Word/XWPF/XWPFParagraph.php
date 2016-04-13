@@ -61,7 +61,7 @@ class XWPFParagraph
     /**
      * @return mixed
      */
-    private function getCTP()
+    public function getCTP()
     {
         $ctp = java_values($this->paragraph->getCTP()->toString());
         return $ctp;
@@ -103,7 +103,7 @@ class XWPFParagraph
         return $styleId;
     }
 
-    private function getParagraphStyle()
+    public function getParagraphStyle()
     {
         $style = $this->getDocumentStyles()->getStyle($this->paragraph->getStyleID());
         return $style;
@@ -140,12 +140,16 @@ class XWPFParagraph
         $lineSpacing = $this->getLineSpacing();
         $alignment = $this->getAlignment();
         $indentation = java_values($this->paragraph->getIndentationFirstLine());
+        $paddingLeft = round(java_values($this->paragraph->getFirstLineIndent()) / 20, 2);
+        $marginLeft = round(java_values($this->paragraph->getIndentationLeft()) / 20, 2);
 
         if ($indentation > 0) $paragraphStyle->setAttribute("text-indent", round($indentation / 11) . 'px');
         $paragraphStyle->setAttribute("line-height", $lineSpacing . "%");
         $paragraphStyle->setAttribute("text-align", $alignment);
         $paragraphStyle->setAttribute("text-indent", round($indentation / 11) . 'px');
         $paragraphStyle->setAttribute("margin-bottom", '0.14in');
+        $paragraphStyle->setAttribute('padding-left', $paddingLeft > 0 ? $paddingLeft.'px' : '5.4px');
+        $paragraphStyle->setAttribute('margin-left', $marginLeft > 0 ? $marginLeft.'px' : null);
 
         if ($this->hasStyleID()) {
             $paragraphCustomStyleClass = $this->getCustomStyle();
@@ -167,9 +171,19 @@ class XWPFParagraph
 
     /**
      * @return bool
+     */
+    public function hasBookmark()
+    {
+        $xml = $this->getCTP();
+        $hasBookmark = (strpos($xml, '<w:bookmarkStart') !== false) ? true : false;
+        return $hasBookmark;
+    }
+
+    /**
+     * @return bool
      * @internal param $styleName
      */
-    private function isHeadline()
+    public function isHeadline()
     {
         $styleName = $this->getStyleName();
         $isHeadline = (strpos(strtolower($styleName), 'heading') !== false) ? true : false;
@@ -179,7 +193,7 @@ class XWPFParagraph
     /**
      * @return string
      */
-    private function getStyleName()
+    public function getStyleName()
     {
         $styleName = "";
         if ($this->hasStyleID()) {
@@ -187,6 +201,12 @@ class XWPFParagraph
             $styleName = java_values($style->getName());
         }
         return $styleName;
+    }
+
+    public function getNumId()
+    {
+        $numId = java_values($this->getNumID());
+        return $numId;
     }
 
 
@@ -216,12 +236,21 @@ class XWPFParagraph
     /**
      * @return StyleClass
      */
-    private function getCustomStyle()
+    public function getCustomStyle()
     {
         $style = $this->getParagraphStyle();
         $xwpfStyle = new XWPFStyle($style);
         $paragraphCustomStyleClass = $xwpfStyle->processStyle();
         return $paragraphCustomStyleClass;
+    }
+
+    public function getNumberingFromStyle(){
+        $style = $this->getParagraphStyle();
+        $xwpfStyle = new XWPFStyle($style);
+        $styleXml = $xwpfStyle->getXMLObject();
+        $num = $styleXml->xpath("wpPr/wnumPr/wnumId");
+        $numInfo = (count($num) > 0) ? $num : false;
+        return $numInfo;
     }
 
     /**
@@ -255,23 +284,34 @@ class XWPFParagraph
      * @return
      * @internal param $paragraphContainer
      */
-    private function parseRunCharacters($container)
+    private function parseRunCharacters(HTMLElement $container)
     {
         $runs = $this->getIRuns();
-        foreach ($runs as $run) {
-            $pictures = java_values($run->getEmbeddedPictures());
-            $xwpfRun = new XWPFRun($run, $this->mainStyleSheet);
-            $charRunHTMLElement = $xwpfRun->parseRun();
 
-            if (count($pictures) > 0) {
-                $container->addInnerElement($charRunHTMLElement);
-                $prevCharRunHTMLElement = clone $charRunHTMLElement;
-            } else if (@isset($prevCharRunHTMLElement) && $charRunHTMLElement->getClass() == $prevCharRunHTMLElement->getClass()) {
-                $container->getLastElement()->addInnerText($charRunHTMLElement->getInnerText());
-            } else {
-                $container->addInnerElement($charRunHTMLElement);
-                $prevCharRunHTMLElement = clone $charRunHTMLElement;
+        if (count($runs) > 0) {
+            foreach ($runs as $run) {
+                $pictures = java_values($run->getEmbeddedPictures());
+                $xwpfRun = new XWPFRun($run, $this->mainStyleSheet);
+                $charRunHTMLElement = $xwpfRun->parseRun();
+
+                if ($charRunHTMLElement->getTagName() == 'sub' || 'sup') {
+                    $container->addInnerElement($charRunHTMLElement);
+                } else if (count($pictures) > 0) {
+                    $container->addInnerElement($charRunHTMLElement);
+                    $prevCharRunHTMLElement = clone $charRunHTMLElement;
+                } else if (@isset($prevCharRunHTMLElement) && $charRunHTMLElement->getClass() == $prevCharRunHTMLElement->getClass()) {
+                    $container->getLastElement()->addInnerText($charRunHTMLElement->getInnerText());
+                } else {
+                    $container->addInnerElement($charRunHTMLElement);
+                    $prevCharRunHTMLElement = clone $charRunHTMLElement;
+                }
             }
+        } else {
+            $container = new HTMLElement(HTMLElement::BR);
+            //$container->addInnerText('<br/>');
+//            var_dump(count($runs));
+ //           var_dump($container);
+//            $container->addInnerText('<br/>');
         }
         return $container;
     }

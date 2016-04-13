@@ -44,6 +44,15 @@ class ListHelper
         return false;
     }
 
+    public static function isTocNumbering($paragraph){
+
+        //if(isset($this->listItemIterator) && $paragraph->hasBookmark()) $this->listItemIterator = 1;
+
+        $ctp = java_values($paragraph->getCTP()->toString());
+        $hasBookmark = (strpos($ctp, '<w:bookmarkStart') !== false) ? true : false;
+        return $hasBookmark;
+    }
+
     /**
      * @param $abstractNum
      * @param $numberingInfo
@@ -53,6 +62,7 @@ class ListHelper
     {
         if (is_object($abstractNum)) {
             $numXml = ListHelper::extractCTAbstractNum($abstractNum);
+            $level = $numXml->xpath('wlvl');
             $ilvl = $numXml->xpath('wlvl/wnumFmt');
             $ilvlSymbol = $numXml->xpath('wlvl/wlvlText');
             $listSymbol = $ilvlSymbol[$numberingInfo['lvl']]["wval"];
@@ -79,20 +89,23 @@ class ListHelper
     {
         $ipind = $numXml->xpath('wlvl/wpPr/wind');
 
-        try {
-            $hanging = $ipind[$numberingInfo['lvl']]['whanging'];
-            $wleft = $ipind[$numberingInfo['lvl']]['wleft'];
-        } catch (Exception $exception) {
-            //Setting default
-            $hanging = 1;
-            $wleft = 1;
-            var_dump($exception);
+        if (count($ipind) > 0) {
+            try {
+                $hanging = $ipind[$numberingInfo['lvl']]['whanging'];
+                $wleft = $ipind[$numberingInfo['lvl']]['wleft'];
+            } catch (Exception $exception) {
+                $hanging = 1;
+                $wleft = 1;
+                //CakeLog::debug('[ListHelper::calculateListIndentation] No indentation found in xml');
+            }
+
+            $listIndentation = ((intval($wleft) / intval($hanging)) / 4) * 100;
+
+            return intval($listIndentation);
         }
-
-        $listIndentation = ((intval($wleft) / intval($hanging)) / 4) * 100;
-
-        return intval($listIndentation);
+        return null;
     }
+
 
     /**
      * Get list type
@@ -149,11 +162,32 @@ class ListHelper
 
     /**
      * @param $abstractNum
+     * @return mixed
+     */
+    public static function getCTAbstractNum($abstractNum){
+        $stringNumbering = java_values($abstractNum->getCTAbstractNum()->ToString());
+        return $stringNumbering;
+    }
+
+    public static function setListNumbering($sectionNumbering, $paragraphHTMLElement)
+    {
+        $sectionContainer = new HTMLElement(HTMLElement::SPAN);
+        $sectionContainer->setInnerText($sectionNumbering);
+        if($paragraphHTMLElement->getTagName() == 'header') {
+            $elements = $paragraphHTMLElement->getLastElement()->getInnerElements();
+            array_unshift($elements, $sectionContainer);
+            $paragraphHTMLElement->getLastElement()->setInnerElementsArray($elements);
+        }
+    }
+
+
+    /**
+     * @param $abstractNum
      * @return SimpleXMLElement
      */
     public static function extractCTAbstractNum($abstractNum)
     {
-        $stringNumbering = java_values($abstractNum->getCTAbstractNum()->ToString());
+        $stringNumbering = self::getCTAbstractNum($abstractNum);
         $numberingXml = str_replace('w:', 'w', $stringNumbering);
         $numXml = new SimpleXMLElement($numberingXml);
         return $numXml;

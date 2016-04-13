@@ -16,9 +16,9 @@ class XWPFTableRow
      * @throws Exception
      */
     function __construct($row){
-        if(is_object($row)){
+        if (java_instanceof($row, java('org.apache.poi.xwpf.usermodel.XWPFTableRow'))) {
             $this->row = $row;
-        }else{
+        } else{
             throw new Exception("[XWPFTableRow::new XWPFTableRow] Fail on create row");
         }
     }
@@ -63,6 +63,51 @@ class XWPFTableRow
         return $isRepeatHeader;
     }
 
+
+    public function getRowCnfStyle(){
+        $rowXml = $this->getXMLRowObject();
+        var_dump($rowXml);
+        $wtrPr = $rowXml->xpath("wtrPr");
+        //var_dump($rowXml);
+        if(is_null($rowXml)){
+           // var_dump($this->getCtRow());
+        }
+        if(!is_null($wtrPr)){
+            //$cnfStyle = $wtrPr[0]->xpath('wcnfStyle');
+            //var_dump($cnfStyle);
+
+
+//            if(!is_null($cnfStyle)){
+//                //var_dump($cnfStyle);
+//                var_dump($cnfStyle[0]['wval']);
+//            }
+        }
+//        var_dump($cnfStyle);
+//        $properties = (!empty($cnfStyle)) ? (string)$cnfStyle['wval'] : null;
+//        return $properties;
+
+
+//        $cnfStyleProperties = array();
+//        if(!empty($cnfStyle)) {
+//            $cnfStyleProperties = array(
+//                'tableLookVal' => (string)$cnfStyle['wval'],
+//                'firstRow' => (string)$cnfStyle['wfirstRow'],
+//                'lastRow' => (string)$cnfStyle['wlastRow'],
+//                'firstColumn' => (string)$cnfStyle['wfirstColumn'],
+//                'lastColumn' => (string)$cnfStyle['wlastColumn'],
+//                'oddVBand' => (string)$cnfStyle['woddVBand'],
+//                'evenVBand' => (string)$cnfStyle['wevenVBand'],
+//                'oddHBand' => (string)$cnfStyle['woddHBand'],
+//                'evenHBand' => (string)$cnfStyle['woddHBand'],
+//                'firstRowFirstColumn' => (string)$cnfStyle['wfirstRowFirstColumn'],
+//                'firstRowLastColumn' => (string)$cnfStyle['wfirstRowLastColumn'],
+//                'lastRowFirstColumn' => (string)$cnfStyle['wlastRowFirstColumn'],
+//                'lastRowLastColumn' => (string)$cnfStyle['wlastRowLastColumn']
+//            );
+//        }
+//        return $cnfStyleProperties;
+    }
+
     /**
      * @return StyleClass
      */
@@ -90,7 +135,7 @@ class XWPFTableRow
     /**
      * @return SimpleXMLElement
      */
-    private function getXMLRowObject()
+    public function getXMLRowObject()
     {
         $rowXmlStr = $this->getCtRow();
         $tmpRowXmlStr = str_replace('w:', 'w', $rowXmlStr);

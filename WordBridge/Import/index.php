@@ -4,10 +4,18 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+    <style type="text/css">
+        body {
+            margin-right: auto;
+            max-width: 50%;
+            margin-left: auto;
+        }
+    </style>
 </head>
 
 
-<body >
+<body>
 
 <h1>Test Library</h1>
 
@@ -28,7 +36,7 @@
 <?php
 include_once 'Word/XWPFToHTMLConverter.php';
 
-    $filename = 'DemoDokument_Enercon.docx';
+    $filename = 'IFRSTOC.docx';
     $entryPoint = new EntryPoint($filename);
     $entryPoint->run($filename);
 
@@ -67,7 +75,7 @@ class EntryPoint
 
         // Set docx file to parse
         $converter->setDocFileToParse($sourceFile);
-        $converter::setPageBreaks(true, true);
+        $converter::setPageBreaks(false, false);
 
         // Convert everything to HTML
         $converter->convertToHTML();
@@ -85,7 +93,7 @@ class EntryPoint
             $contentStructure = array();
             $headlineList = $converter->getHeadLineList();
 
-            var_dump($headlineList);
+            //var_dump($headlineList);
 
             //    if(!empty($headlineList)) {
             //
@@ -156,6 +164,8 @@ class EntryPoint
             //    var_dump($contentStructure);
 
         }
+//        $headlineList = $converter->getHeadLineList();
+//        var_dump($headlineList);
 
         // Get HTML pages
         $pages = $converter->getHTMLPages();

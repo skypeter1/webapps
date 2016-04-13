@@ -170,9 +170,9 @@ class StyleClass
             $mergeAttributes = $styleToMerge->getAttributes();
             if(!is_null($mergeAttributes)) {
                 foreach ($mergeAttributes as $merge_key => $mergeAttribute) {
-                    if (!$this->attributeExists($merge_key)) {
+                    //if (!$this->attributeExists($merge_key)) {
                         $mergedStyle->setAttribute($merge_key, $mergeAttribute);
-                    }
+                    //}
                 }
             }
         } else {

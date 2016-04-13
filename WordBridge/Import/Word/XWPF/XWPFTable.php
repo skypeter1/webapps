@@ -131,6 +131,29 @@ class XWPFTable
         return $type;
     }
 
+    private function getTableCnfStyle(){
+        $cnfStyle = $this->getProperty("wtblPr/wcnfStyle");
+        $cnfStyleProperties = array();
+        if(!empty($cnfStyle)) {
+            $cnfStyleProperties = array(
+                'tableLookVal' => (string)$cnfStyle['wval'],
+                'firstRow' => (string)$cnfStyle['wfirstRow'],
+                'lastRow' => (string)$cnfStyle['wlastRow'],
+                'firstColumn' => (string)$cnfStyle['wfirstColumn'],
+                'lastColumn' => (string)$cnfStyle['wlastColumn'],
+                'oddVBand' => (string)$cnfStyle['woddVBand'],
+                'evenVBand' => (string)$cnfStyle['wevenVBand'],
+                'oddHBand' => (string)$cnfStyle['woddHBand'],
+                'evenHBand' => (string)$cnfStyle['woddHBand'],
+                'firstRowFirstColumn' => (string)$cnfStyle['wfirstRowFirstColumn'],
+                'firstRowLastColumn' => (string)$cnfStyle['wfirstRowLastColumn'],
+                'lastRowFirstColumn' => (string)$cnfStyle['wlastRowFirstColumn'],
+                'lastRowLastColumn' => (string)$cnfStyle['wlastRowLastColumn']
+            );
+        }
+        return $cnfStyleProperties;
+    }
+
     /**
      * @return HTMLElement|null
      * @throws Exception
@@ -138,6 +161,9 @@ class XWPFTable
     public function parseTable()
     {
         if (is_object($this->javaTable)) {
+
+//            var_dump($this->getXMLObject());
+//            var_dump($this->getTableCnfStyle());
 
             $container = new HTMLElement(HTMLElement::TABLE);
             $styleClass = $this->processTableStyles();
@@ -156,16 +182,30 @@ class XWPFTable
                 $conditionalTableRowStyleClass = $this->processConditionalFormat($rowNumber, $styleClass, $numberOfRows);
                 $rowContainer = new HTMLElement(HTMLElement::TR);
                 $xwpfRow = new XWPFTableRow($row);
+                //var_dump($xwpfRow->getCtRow());
+                //var_dump($xwpfRow->getXMLRowObject());
+                //var_dump(java_values($row->getCtRow()->ToString()));
+                //var_dump($xwpfRow->getRowCnfStyle());
+                $rowXml = $xwpfRow->getXMLRowObject();
+                $wtrPr = $rowXml->xpath("wtrPr");
+                //var_dump($wtrPr);
+//                if(empty($wtrPr)){
+//                    var_dump($xwpfRow->getCtRow());
+//                }
+
                 $rowStyle = $xwpfRow->processRowStyle();
                 $rowClassName = $this->mainStyleSheet->getClassName($rowStyle);
                 $rowContainer->setClass($rowClassName);
 
                 $cells = $xwpfRow->getTableICells();
+                $numberOfCells = count($cells) - 1;
 
                 foreach ($cells as $cellNumber => $cell) {
 
+                    $conditionalTableCellStyleClass = $this->processConditionalCellStyle($cellNumber, $styleClass, $numberOfCells);
+
                     if (java_instanceof($cell, java('org.apache.poi.xwpf.usermodel.XWPFTableCell'))) {
-                        $cellContainer = $this->processXWPFTableCell($cell, $styleClass, $conditionalTableRowStyleClass);
+                        $cellContainer = $this->processXWPFTableCell($cell, $styleClass, $conditionalTableRowStyleClass,$conditionalTableCellStyleClass);
                         $rowContainer->addInnerElement($cellContainer);
                     }
 
@@ -214,6 +254,7 @@ class XWPFTable
                 $tableStyles['conditionalFormat'] = $tableCellConditionalFormat;
             }
         }else {
+
             $tableStyleClass = new StyleClass();
             $tableStyleClass->setAttribute("border-collapse", "collapse");
             $tcBorders = $this->getProperty("wtblPr/wtblBorders");
@@ -243,6 +284,7 @@ class XWPFTable
         // Get internal values
         $borders = $format["borders"];
         $backgroundColor = $format["backgroundColor"];
+        $runStyle =  $format["runStyle"];
 
         // Apply first row styles
         if (!empty($borders) && is_array($borders)) {
@@ -260,6 +302,23 @@ class XWPFTable
         }
 
         return $conditionalTableCellStyleClass;
+    }
+
+    private function getTableLook(){
+        $tableLook = $this->getProperty("wtblPr/wtblLook");
+        $tableLookProperties = array();
+        if(!empty($tableLook)) {
+            $tableLookProperties = array(
+                'tableLookVal' => (string)$tableLook['wval'],
+                'firstRow' => (string)$tableLook['wfirstRow'],
+                'lastRow' => (string)$tableLook['wlastRow'],
+                'firstColumn' => (string)$tableLook['wfirstColumn'],
+                'lastColumn' => (string)$tableLook['wlastColumn'],
+                'noHBand' => (string)$tableLook['wnoHBand'],
+                'noVBand' => (string)$tableLook['wnoVBand']
+            );
+        }
+        return $tableLookProperties;
     }
 
     /**
@@ -300,14 +359,45 @@ class XWPFTable
      * @param $conditionalTableRowStyleClass
      * @return HTMLElement
      */
-    private function processXWPFTableCell($cell, $styleClass, $conditionalTableRowStyleClass)
+    private function processXWPFTableCell($cell, $styleClass, $conditionalTableRowStyleClass,$conditionalTableCellStyleClass)
     {
         $xwpfCell = new XWPFTableCell($cell, $this->mainStyleSheet);
         $cellContainer = $xwpfCell->parseTableCell();
         $tableCellStyle = $xwpfCell->processTableCellStyle();
+
+        $internalParagraph = $cellContainer->getLastElement();
+        $spans = $internalParagraph->getInnerElements();
+//        if(array_key_exists('conditionalFormat',$styleClass)){
+//            //var_dump($styleClass['conditionalFormat'][0]['runstyle']);
+//            $runStyle = $styleClass['conditionalFormat'][0]['runStyle'];
+//            if(!empty($runStyle)){
+//                foreach($spans as $span){
+//                   $spanClass = $span->getClass();
+//                    var_dump($runStyle);
+//                    $color = (!empty($runStyle['color'])) ? $runStyle['color'] : false;
+//                    if($color) {
+//                        $span->setAttribute('style','color: #'.$color);
+//                    }
+//
+//                    $bold = ($runStyle['bold']) ? 'bold' : false;
+//                    if($bold) {
+//                        $span->setAttribute('style','font-weight:'.$bold);
+//                    }
+//
+//                    $italic = ($runStyle['italic']) ? 'italic' : false;
+//                    if($italic) {
+//                        $span->setAttribute('style','font-style:'.$italic);
+//                    }
+//                    var_dump($span);
+//                }
+//            }
+//        }
+//        var_dump($styleClass);
+//        var_dump($spans);
+
         $cellStyles = (array_key_exists('cell', $styleClass)) ? $styleClass['cell'] : array();
 
-        if (isset($this->mainStyleSheet) and is_a($this->mainStyleSheet, 'StyleSheet')) {
+        if (isset($this->mainStyleSheet) && is_a($this->mainStyleSheet, 'StyleSheet')) {
 
             //Merge standard cell borders
             $cellStyleClass = (!empty($cellStyles)) ? $tableCellStyle->mergeStyleClass($cellStyles) : $tableCellStyle;
@@ -315,6 +405,8 @@ class XWPFTable
             //Set conditional format to cells of the current row if is set
             if (isset($conditionalTableRowStyleClass) && $conditionalTableRowStyleClass->hasAttributes()) {
                 $cellStyleClass = $cellStyleClass->mergeStyleClass($conditionalTableRowStyleClass);
+            }elseif (isset($conditionalTableCellStyleClass) && $conditionalTableCellStyleClass->hasAttributes()) {
+                $cellStyleClass = $cellStyleClass->mergeStyleClass($conditionalTableCellStyleClass);
             }
 
             $className = $this->mainStyleSheet->getClassName($cellStyleClass);
@@ -322,6 +414,51 @@ class XWPFTable
             return $cellContainer;
         }
         return $cellContainer;
+    }
+
+    private function selectInnerSpans($cellElements){
+        $spans = array();
+        foreach($cellElements as $element){
+            if($element->getTagName() == 'span'){
+                $spans[] = $element;
+                return $spans;
+                break;
+            }
+            $innerElements = $element->getInnerElements();
+            if(!empty($innerElements)){
+                $this->selectInnerSpans($innerElements);
+            }
+        }
+        return $spans;
+    }
+
+    /**
+     * @param $cellNumber
+     * @param $styleClass
+     * @param $numberOfCells
+     * @return StyleClass
+     */
+    private function processConditionalCellStyle($cellNumber, $styleClass, $numberOfCells)
+    {
+        $conditionalTableCellStyleClass = new StyleClass();
+        $typeOfCellNumber = $this->checkOddOrEvenNumber($cellNumber);
+
+        //Check for conditional formatting
+        if (array_key_exists('conditionalFormat', $styleClass)) {
+            $conditionalFormatForCells = $styleClass['conditionalFormat'];
+
+            foreach ($conditionalFormatForCells as $cellFormat) {
+                $typeOfCellFormat = $cellFormat["type"];
+                if ($typeOfCellFormat == "firstCol" && $cellNumber == 0) {
+                    $conditionalTableCellStyleClass = $this->applyConditionalFormatStyles($cellFormat);
+                } elseif ($typeOfCellFormat == "lastCol" && ($cellNumber == $numberOfCells)) {
+                    $conditionalTableCellStyleClass = $this->applyConditionalFormatStyles($cellFormat);
+                } elseif (($typeOfCellFormat == "band1Vert") && $typeOfCellNumber == "odd") {
+                    $conditionalTableCellStyleClass = $this->applyConditionalFormatStyles($cellFormat);
+                }
+            }
+        }
+        return $conditionalTableCellStyleClass;
     }
 
 }

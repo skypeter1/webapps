@@ -201,9 +201,9 @@ class TableOfContents
 
         $descriptionCell = new HTMLElement(HTMLElement::TD);
         $description = $entry['description'];
-        while (strlen($description) < 140) {
-            $description .= ".";
-        }
+//        while (strlen($description) < 140) {
+//            $description .= ".";
+//        }
         $descriptionCell->setInnerText($description);
 
         $pageCell = new HTMLElement(HTMLElement::TD);

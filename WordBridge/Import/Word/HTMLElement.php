@@ -33,6 +33,7 @@ class HTMLElement{
     const OPTION = "option";
     const SUB = "sub";
     const SUP = "sup";
+    const BR = "br";
 
     private $tagName;
     private $id;
@@ -146,6 +147,19 @@ class HTMLElement{
     {
         $this->innerElements = array($innerElement);
     }
+
+    public function setInnerElementsArray($newElements)
+    {
+        if (is_array($newElements)) {
+            $total = array();
+            foreach ($newElements as $element) {
+                if (is_a($element, 'HTMLElement')) {
+                    $total[] = $element;
+                }
+            }
+            $this->innerElements = $total;
+        }
+    }
     
     /**
      * Get last element
@@ -205,7 +219,8 @@ class HTMLElement{
      */
     public function getInnerText()
     {
-            return ($this->innerElements[0]) ? @$this->innerElements[0]->getHTML() : 0;
+        $innerText = (count($this->innerElements) > 0) ? @$this->innerElements[0]->getHTML() : 0;
+        return $innerText;
     }
     
     /**
@@ -287,6 +302,7 @@ class HTMLElement{
         
         // Add tag type
         switch ($this->tagName) {
+            case self::BR:      $str .= "/>\n";                                             break;
             case self::IMG:     $str .= "/>\n";                                             break;
             case self::SPAN:    $str .= '>'.trim($innerHTML).'</'.$this->tagName.">\n";     break;
             case self::TEXT:    $str .= trim($innerHTML);                                   break;

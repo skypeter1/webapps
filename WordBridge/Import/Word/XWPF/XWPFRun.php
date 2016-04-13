@@ -9,9 +9,11 @@ include_once "XWPFPicture.php";
  */
 class XWPFRun
 {
-    private $run;
-    private $mainStyleSheet;
-    private $runXml;
+    protected $run;
+    protected $mainStyleSheet;
+    protected $runXml;
+
+    private $isHyperLink;
 
     /**
      * @param $run
@@ -24,6 +26,7 @@ class XWPFRun
             $this->runXml = $this->getCTP();
         }
         $this->mainStyleSheet = $mainStyleSheet;
+        $this->isHyperLink = java_instanceof($this->run, java('org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun'));
     }
 
     /**
@@ -33,8 +36,15 @@ class XWPFRun
     {
         $charXml = str_replace('w:', 'w', $this->runXml);
         $runXml = new SimpleXMLElement($charXml);
-
         return $runXml;
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getCTP(){
+        $charXml = java_values($this->run->getCTR()->ToString());
+        return $charXml;
     }
 
     /**
@@ -58,20 +68,13 @@ class XWPFRun
     }
 
     /**
-     * @return mixed
-     */
-    private function getCTP(){
-        $charXml = java_values($this->run->getCTR()->ToString());
-        return $charXml;
-    }
-
-    /**
      * @return bool
      */
-    public function hasDefaultPageBreak(){
+    public function hasDefaultPageBreak()
+    {
         $pageBreakMarkup = array('manual' => '<w:br w:type="page"/>', 'byPage' => '<w:lastRenderedPageBreak/>');
-        $isByPage = (strpos($this->runXml, $pageBreakMarkup['byPage']) !== false) ? true:false;
-        $isManual = (strpos($this->runXml, $pageBreakMarkup['manual']) !== false) ? true:false;
+        $isByPage = (strpos($this->runXml, $pageBreakMarkup['byPage']) !== false) ? true : false;
+        $isManual = (strpos($this->runXml, $pageBreakMarkup['manual']) !== false) ? true : false;
         $isPageBreak = ($isByPage) ? true : false;
         return $isPageBreak;
     }
@@ -87,11 +90,23 @@ class XWPFRun
     }
 
     /**
+     * Retrieve the hyper link URL value
+     * @return mixed
+     */
+    private function getHyperLinkURL()
+    {
+        if (is_null(java_values($this->run->getHyperlink($this->run->getDocument())))) {
+            return '';
+        }
+        return java_values($this->run->getHyperlink($this->run->getDocument())->getURL());
+    }
+
+    /**
      * @return string
      */
     public function getText()
     {
-        $text = nl2br(java_values($this->run->getText(0)));
+        $text = java_values($this->run->getText(0));
         $runText = XhtmlEntityConverter::convertToNumericalEntities(htmlentities($text, ENT_COMPAT | ENT_XHTML));
         return $runText;
     }
@@ -113,7 +128,16 @@ class XWPFRun
         }
 
         // Character parser
-        $runContainer = ($this->getSubscript() != 1) ? $this->selectSubscriptContainer() : new HTMLElement(HTMLElement::SPAN);
+        $runContainer = new HTMLElement(HTMLElement::SPAN);
+        if ($this->getSubscript() != 1) {
+            $runContainer = $this->selectSubscriptContainer();
+        } else {
+            if ($this->isHyperLink) {
+                $runContainer = new HTMLElement(HTMLElement::A);
+                $runContainer->setAttribute('href', $this->getHyperLinkURL());
+            }
+        }
+
         $text = $this->getText();
         $addNewLine = (strlen($text) == 1 && (substr($text, -1, 1) == "\r" || ord(substr($text, -1, 1)) == HWPFWrapper::BEL_MARK)) ? true : false;
         if ($addNewLine) {
@@ -141,9 +165,13 @@ class XWPFRun
         //Get background highlight color
         $runCharShadows = $xml->xpath("wrPr/wshd");
         $backgroundColor = (!empty($runCharShadows)) ? $runCharShadows[0]['wfill'] : null;
+        if (is_null($backgroundColor)) {
+            $runCharHighlight = $xml->xpath("wrPr/whighlight");
+            $backgroundColor = (!empty($runCharHighlight)) ? (string)$runCharHighlight[0]['wval'] : null;
+        }
 
         // Get StrikeThrough
-        $runStrike =  $xml->xpath("wrPr/wstrike");
+        $runStrike = $xml->xpath("wrPr/wstrike");
         $isStrikeThrough = (!empty($runStrike)) ? true : false;
 
         // Get style
@@ -161,9 +189,16 @@ class XWPFRun
         // Get underline
         $underlined_type = java_values($run->getUnderline()->getValue());
 
-        //Default underline set to none
+        // Default underline set to none
         if (!is_int($underlined_type)) $underlined_type = 12;
         $underlined = HWPFWrapper::getUnderline($underlined_type);
+
+        // Hyper Link Default styles
+        if($this->isHyperLink) {
+            if(is_null(java_values($run->getColor()))) {
+                $color = 'blue';
+            }
+        }
 
         // Create empty class, and attach it to span element
         $styleClass = new StyleClass();
@@ -174,12 +209,15 @@ class XWPFRun
         if ($fontStyle != 'normal') $styleClass->setAttribute("font-style", $fontStyle);
         if ($fontSize) $styleClass->setAttribute("font-size", (string)$fontSize . "pt");
         if ($underlined != 'none') $styleClass->setAttribute("text-decoration", $underlined);
-        if (!is_null($backgroundColor)) $styleClass->setAttribute("background-color", "#" . $backgroundColor->__toString());
+        if (!is_null($backgroundColor)) {
+            $background = (ctype_alpha($backgroundColor)) ? $backgroundColor : "#" . $backgroundColor->__toString();
+            $styleClass->setAttribute("background-color", $background);
+        }
         if ($fontFamily) {
             $styleFont = HWPFWrapper::getFontFamily($fontFamily);
             $styleClass->setAttribute("font-family", $styleFont);
         }
-        if($isStrikeThrough) $styleClass->setAttribute("text-decoration", "line-through");
+        if ($isStrikeThrough) $styleClass->setAttribute("text-decoration", "line-through");
 
         $className = $this->mainStyleSheet->getClassName($styleClass);
 
